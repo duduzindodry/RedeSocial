@@ -21,7 +21,7 @@ public class LoginServlet extends HttpServlet {
         if ("admin".equals(usuario) && "123".equals(senha)) {
             HttpSession sessao = request.getSession();
             sessao.setAttribute("usuario", usuario);
-            response.sendRedirect("perfil.jsp");
+            response.sendRedirect("index.jsp");
         } else {
             response.sendRedirect("login.jsp?erro=1");
         }

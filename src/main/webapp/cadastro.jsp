@@ -17,11 +17,9 @@
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav ms-auto">
-          <li class="nav-item"><a class="nav-link" href="index.jsp">Home</a></li>
-          <li class="nav-item"><a class="nav-link" href="perfil.jsp">Perfil</a></li>
-          <li class="nav-item"><a class="nav-link" href="amigos.jsp">Amigos</a></li>
+         
           <li class="nav-item"><a class="nav-link" href="login.jsp">Login</a></li>
-          <li class="nav-item"><a class="nav-link" href="cadastro.jsp">Cadastro</a></li>
+          
         </ul>
       </div>
     </div>
@@ -32,15 +30,15 @@
     <form action="cadastro" method="post">
       <div class="mb-3">
         <label for="nome" class="form-label">Nome</label>
-        <input type="text" class="form-control" id="nome" name="nome">
+        <input type="text" class="form-control" id="nome" name="nome" required>
       </div>
       <div class="mb-3">
         <label for="email" class="form-label">Email</label>
-        <input type="email" class="form-control" id="email" name="email">
+        <input type="email" class="form-control" id="email" name="email" required>
       </div>
       <div class="mb-3">
         <label for="senha" class="form-label">Senha</label>
-        <input type="password" class="form-control" id="senha" name="senha">
+        <input type="password" class="form-control" id="senha" name="senha" required>
       </div>
       <button type="submit" class="btn btn-success">Cadastrar</button>
     </form>
