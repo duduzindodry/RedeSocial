@@ -1,5 +1,5 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8"
-    pageEncoding="UTF-8"%>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page import="br.com.minharede.models.Usuario" %>
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -18,11 +18,31 @@
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav ms-auto">
+      
+        <%
+         
+          Usuario usuario = (Usuario) session.getAttribute("usuarioLogado");
+          if (usuario != null) {
+            // USUÁRIO LOGADO: MOSTRA PERFIL, AMIGOS E LOGOUT
+        %>
         <li class="nav-item"><a class="nav-link" href="index.jsp">Home</a></li>
         <li class="nav-item"><a class="nav-link" href="perfil.jsp">Perfil</a></li>
         <li class="nav-item"><a class="nav-link" href="amigos.jsp">Amigos</a></li>
+        
+        <li class="nav-item">
+            <a class="nav-link" href="logout">Sair (<%= usuario.getNome() %>)</a>
+        </li>
+        
+        <%
+          } else {
+            // USUÁRIO DESLOGADO: MOSTRA LOGIN E CADASTRO
+        %>
+        <li class="nav-item"><a class="nav-link" href="index.jsp">Home</a></li>
         <li class="nav-item"><a class="nav-link" href="login.jsp">Login</a></li>
         <li class="nav-item"><a class="nav-link" href="cadastro.jsp">Cadastro</a></li>
+        <%
+          }
+        %>
       </ul>
     </div>
   </div>

@@ -1,4 +1,4 @@
-package br.com.minharede;
+package br.com.minharede.d;
 
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
