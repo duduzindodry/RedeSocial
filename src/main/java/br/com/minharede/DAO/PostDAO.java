@@ -3,6 +3,7 @@ package br.com.minharede.DAO;
 import br.com.minharede.models.Comunidade;
 import br.com.minharede.models.Post;
 import br.com.minharede.models.Usuario;
+import br.com.minharede.utils.ConexaoDB; 
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -14,245 +15,275 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 
-
 public class PostDAO {
-
-	// ... dentro da classe PostDAO.java
-
+    
+    // Método auxiliar para obter a conexão (Usa o utilitário)
 	private Connection getConnection() throws SQLException {
-	    // 1. Defina suas credenciais
-	    String url = "jdbc:mysql://127.0.0.1:3306/bd?useTimezone=true&serverTimezone=UTC";
-	    String user = "root"; // Ex: root
-	    String password = "12345"; // A senha do seu usuário do banco
-
-	    try {
-	        // 2. Garanta que o Driver MySQL seja carregado (Opcional, mas boa prática)
-	        // Não é estritamente necessário para JDBC 4.0+ (Java 6+), mas evita problemas
-	        Class.forName("com.mysql.cj.jdbc.Driver");
-	    } catch (ClassNotFoundException e) {
-	        // Se este erro ocorrer, o JAR do MySQL Connector não está na pasta WEB-INF/lib
-	        throw new SQLException("Driver JDBC não encontrado.", e);
-	    }
-
-	    // 3. Estabelece e retorna a conexão
-	    return java.sql.DriverManager.getConnection(url, user, password);
+        return ConexaoDB.getConnection(); 
 	}
 
     
+    // Método auxiliar para extração completa de Post (Feed e PostView)
     private Post extrairPost(ResultSet rs) throws SQLException {
         Post post = new Post();
         post.setId(rs.getInt("id"));
         post.setTitulo(rs.getString("titulo"));
-     
         post.setConteudo(rs.getString("conteudo"));
         post.setVotos(rs.getInt("votos"));
         post.setNumComentarios(rs.getInt("num_comentarios")); 
 
-      
         Comunidade comunidade = new Comunidade();
         comunidade.setId(rs.getInt("comunidade_id"));
-        comunidade.setSlug(rs.getString("comunidade_slug"));
+        comunidade.setSlug(rs.getString("comunidade_slug")); 
         post.setComunidade(comunidade);
 
-        
-        Usuario usuario = new Usuario(0, null, null);
+        Usuario usuario = new Usuario(); 
         usuario.setNome(rs.getString("usuario_nome"));
         post.setUsuario(usuario);
         
         return post;
     }
 
+    // Método auxiliar para extração SIMPLES (Edição/Moderação)
+    private Post extrairPostSimples(ResultSet rs) throws SQLException {
+        Post post = new Post();
+        post.setId(rs.getInt("id"));
+        post.setTitulo(rs.getString("titulo"));
+        post.setConteudo(rs.getString("conteudo"));
+        
+        Usuario usuario = new Usuario();
+        usuario.setId(rs.getInt("usuario_id")); 
+        post.setUsuario(usuario);
+        
+        Comunidade comunidade = new Comunidade();
+        comunidade.setId(rs.getInt("comunidade_id")); 
+        post.setComunidade(comunidade);
+        
+        return post;
+    }
 
-    /**
-     * Busca posts de comunidades específicas (Feed Personalizado).
-     */
+
+    // ----------------------------------------------------------------------
+    // 1. MÉTODOS DE CONSULTA (LEITURA)
+    // ----------------------------------------------------------------------
+
     public List<Post> buscarPostsPorComunidades(List<Comunidade> comunidades, String orderBy) {
-       
-        if (comunidades == null || comunidades.isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        
-        String ids = comunidades.stream()
-                                .map(c -> String.valueOf(c.getId()))
-                                .collect(Collectors.joining(","));
-
-        
+        String ids = comunidades.stream().map(c -> String.valueOf(c.getId())).collect(Collectors.joining(","));
         String sql = "SELECT p.*, c.slug as comunidade_slug, u.nome as usuario_nome, " +
                      "(SELECT COUNT(*) FROM Comentario co WHERE co.post_id = p.id) as num_comentarios " +
-                     "FROM Post p " +
-                     "JOIN Comunidade c ON p.comunidade_id = c.id " +
+                     "FROM Post p JOIN Comunidade c ON p.comunidade_id = c.id " +
                      "JOIN Usuario u ON p.usuario_id = u.id " +
-                     "WHERE p.comunidade_id IN (" + ids + ") " +
-                     "ORDER BY " + orderBy + " LIMIT 50"; 
+                     "WHERE p.comunidade_id IN (" + ids + ") ORDER BY " + orderBy + " LIMIT 50"; 
 
         List<Post> posts = new ArrayList<>();
-
         try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {
-
-            while (rs.next()) {
-                posts.add(extrairPost(rs));
-            }
-
-        } catch (SQLException e) {
-            System.err.println("Erro ao buscar posts por comunidades: " + e.getMessage());
-           
-        }
+            while (rs.next()) { posts.add(extrairPost(rs)); }
+        } catch (SQLException e) { System.err.println("Erro ao buscar posts por comunidades: " + e.getMessage()); }
         return posts;
     }
     
-    /**
-     * Busca posts globais populares (Feed Global/Deslogado).
-     */
     public List<Post> buscarPostsPopulares(String orderBy) {
-        
         String sql = "SELECT p.*, c.slug as comunidade_slug, u.nome as usuario_nome, " +
                      "(SELECT COUNT(*) FROM Comentario co WHERE co.post_id = p.id) as num_comentarios " +
-                     "FROM Post p " +
-                     "JOIN Comunidade c ON p.comunidade_id = c.id " +
+                     "FROM Post p JOIN Comunidade c ON p.comunidade_id = c.id " +
                      "JOIN Usuario u ON p.usuario_id = u.id " +
-                     "WHERE p.data_criacao > DATE_SUB(NOW(), INTERVAL 7 DAY) " + // Exemplo: apenas posts da última semana
+                     "WHERE p.data_criacao > DATE_SUB(NOW(), INTERVAL 7 DAY) " + 
                      "ORDER BY " + orderBy + " LIMIT 50"; 
-
         List<Post> posts = new ArrayList<>();
-
         try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {
-
-            while (rs.next()) {
-                posts.add(extrairPost(rs));
+            while (rs.next()) { posts.add(extrairPost(rs)); }
+        } catch (SQLException e) { System.err.println("Erro ao buscar posts populares: " + e.getMessage()); }
+        return posts;
+    }
+    
+    public Post buscarPostPorId(int postId) {
+        Post post = null;
+        String sql = "SELECT p.*, u.nome AS usuario_nome, c.nome AS nome_comunidade, c.slug AS comunidade_slug " +
+                     "FROM Post p JOIN Usuario u ON p.usuario_id = u.id " +
+                     "JOIN Comunidade c ON p.comunidade_id = c.id WHERE p.id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, postId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    post = extrairPost(rs);
+                    // NOTA: A contagem de comentários é preenchida no Servlet ou com outro DAO.
+                }
             }
+        } catch (SQLException e) { System.err.println("Erro ao buscar post por ID: " + e.getMessage()); }
+        return post;
+    }
 
-        } catch (SQLException e) {
-            System.err.println("Erro ao buscar posts populares: " + e.getMessage());
-            
-        }
+    public Post buscarPostPorIdSimples(int postId) {
+        String sql = "SELECT p.titulo, p.conteudo, p.usuario_id, p.comunidade_id, p.id FROM Post p WHERE p.id = ?";
+        Post post = null;
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, postId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) { post = extrairPostSimples(rs); }
+            }
+        } catch (SQLException e) { System.err.println("Erro ao buscar post simples: " + e.getMessage()); }
+        return post;
+    }
+    
+    public List<Post> buscarPostsPorUsuario(int usuarioId) {
+        String sql = "SELECT p.*, c.slug AS comunidade_slug, u.nome AS usuario_nome, 0 AS num_comentarios " +
+                     "FROM Post p JOIN Comunidade c ON p.comunidade_id = c.id " +
+                     "JOIN Usuario u ON p.usuario_id = u.id WHERE p.usuario_id = ? ORDER BY p.data_criacao DESC";
+        List<Post> posts = new ArrayList<>();
+        try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, usuarioId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) { posts.add(extrairPost(rs)); }
+            }
+        } catch (SQLException e) { System.err.println("Erro ao buscar posts por usuário: " + e.getMessage()); }
         return posts;
     }
 
- // ... dentro da classe PostDAO.java
+    public List<Post> buscarPostsPorTermo(String termo) {
+        String sql = "SELECT p.*, c.slug AS comunidade_slug, u.nome AS usuario_nome, " +
+                     "(SELECT COUNT(*) FROM Comentario co WHERE co.post_id = p.id) AS num_comentarios " +
+                     "FROM Post p JOIN Comunidade c ON p.comunidade_id = c.id " +
+                     "JOIN Usuario u ON p.usuario_id = u.id " +
+                     "WHERE LOWER(p.titulo) LIKE ? OR LOWER(p.conteudo) LIKE ? " + 
+                     "ORDER BY p.data_criacao DESC LIMIT 50"; 
 
-    /**
-     * Recalcula a soma total de votos para um post e atualiza a coluna 'votos'
-     * na tabela Post. É chamado após qualquer registro ou alteração de voto.
-     * * @param postId O ID do post a ser recalculado.
-     */
-    public void recalcularVotos(int postId) {
-        // 1. SQL para somar todos os votos (direcao) da tabela VotoPost para o postId
-        String selectSql = "SELECT SUM(direcao) AS total_votos FROM VotoPost WHERE post_id = ?";
-        
-        // 2. SQL para atualizar a tabela Post com o total calculado
-        String updateSql = "UPDATE Post SET votos = ? WHERE id = ?";
-        
-        int totalVotos = 0;
+        List<Post> posts = new ArrayList<>();
+        try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, termo);
+            stmt.setString(2, termo);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) { posts.add(extrairPost(rs)); }
+            }
+        } catch (SQLException e) { System.err.println("Erro ao buscar posts por termo: " + e.getMessage()); }
+        return posts;
+    }
+    
+    public List<Post> buscarPostsPorComunidadeId(int comunidadeId) {
+        String sql = "SELECT p.*, u.nome AS usuario_nome, c.slug AS comunidade_slug, " +
+                     "(SELECT COUNT(*) FROM Comentario co WHERE co.post_id = p.id) AS num_comentarios " +
+                     "FROM Post p JOIN Usuario u ON p.usuario_id = u.id " +
+                     "JOIN Comunidade c ON p.comunidade_id = c.id " +
+                     "WHERE p.comunidade_id = ? ORDER BY p.data_criacao DESC LIMIT 50";
+        List<Post> posts = new ArrayList<>();
+        try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, comunidadeId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) { posts.add(extrairPost(rs)); }
+            }
+        } catch (SQLException e) { System.err.println("Erro ao buscar posts por Comunidade ID: " + e.getMessage()); }
+        return posts;
+    }
 
-        try (Connection conn = getConnection()) {
+    public int getComunidadeIdPorPost(int postId) {
+	    String sql = "SELECT comunidade_id FROM Post WHERE id = ?";
+	    try (Connection conn = getConnection();
+	         PreparedStatement stmt = conn.prepareStatement(sql)) {
+	        stmt.setInt(1, postId);
+	        try (ResultSet rs = stmt.executeQuery()) {
+	            if (rs.next()) {
+	                return rs.getInt("comunidade_id");
+	            }
+	        }
+	    } catch (SQLException e) { 
+	        System.err.println("Erro ao buscar comunidade ID do post: " + e.getMessage());
+	    }
+	    return -1;
+	}
+
+
+    // ----------------------------------------------------------------------
+    // 2. MÉTODOS DE MANIPULAÇÃO (DML/MODERAÇÃO/VOTOS)
+    // ----------------------------------------------------------------------
+    
+    public int salvarPost(Post post) {
+        String sql = "INSERT INTO Post (comunidade_id, usuario_id, titulo, conteudo, tipo) VALUES (?, ?, ?, ?, ?)";
+        int postId = -1;
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             
-            // --- Passo 1: Calcular o total ---
+            stmt.setInt(1, post.getComunidade().getId());
+            stmt.setInt(2, post.getUsuario().getId());
+            stmt.setString(3, post.getTitulo());
+            stmt.setString(4, post.getConteudo());
+            stmt.setString(5, post.getTipo());
+            
+            stmt.executeUpdate();
+
+            try (ResultSet rs = stmt.getGeneratedKeys()) { 
+                if (rs.next()) { postId = rs.getInt(1); } 
+            }
+        } catch (SQLException e) { System.err.println("Erro SQL ao salvar novo post: " + e.getMessage()); }
+        return postId;
+    }
+
+    public void recalcularVotos(int postId) {
+        String selectSql = "SELECT SUM(direcao) AS total_votos FROM VotoPost WHERE post_id = ?";
+        String updateSql = "UPDATE Post SET votos = ? WHERE id = ?";
+        int totalVotos = 0;
+        
+        try (Connection conn = getConnection()) {
             try (PreparedStatement selectStmt = conn.prepareStatement(selectSql)) {
                 selectStmt.setInt(1, postId);
-                
                 try (ResultSet rs = selectStmt.executeQuery()) {
-                    if (rs.next()) {
-                        // O método getInt é seguro mesmo se a soma for NULL (retorna 0)
-                        totalVotos = rs.getInt("total_votos");
-                    }
+                    if (rs.next()) { totalVotos = rs.getInt("total_votos"); }
                 }
             }
-            
-            // --- Passo 2: Atualizar a coluna na tabela Post ---
             try (PreparedStatement updateStmt = conn.prepareStatement(updateSql)) {
-                updateStmt.setInt(1, totalVotos); // Novo total
-                updateStmt.setInt(2, postId);     // ID do post
-                
+                updateStmt.setInt(1, totalVotos);
+                updateStmt.setInt(2, postId);
                 updateStmt.executeUpdate();
             }
-            
-        } catch (SQLException e) {
-            System.err.println("Erro ao recalcular votos para o post " + postId + ": " + e.getMessage());
-        }
-        }
-     // ... dentro da classe PostDAO.java
-
-        /**
-         * Busca um post específico pelo seu ID, juntamente com informações do autor e comunidade.
-         *
-         * @param postId O ID do post.
-         * @return O objeto Post completo ou null se não for encontrado.
-         */
-        public Post buscarPostPorId(int postId) {
-            Post post = null;
-            // SQL com JOINs para buscar Post, Usuario (autor) e Comunidade
-            String sql = "SELECT p.*, u.nome AS nome_usuario, c.nome AS nome_comunidade, c.slug AS slug_comunidade " +
-                         "FROM Post p " +
-                         "JOIN Usuario u ON p.usuario_id = u.id " +
-                         "JOIN Comunidade c ON p.comunidade_id = c.id " +
-                         "WHERE p.id = ?";
-
-            try (Connection conn = getConnection();
-                 PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-                stmt.setInt(1, postId);
-
-                try (ResultSet rs = stmt.executeQuery()) {
-                    if (rs.next()) {
-                        // Assumimos que você tem um método auxiliar 'extrairPost' para mapear o ResultSet
-                        // para o objeto Post, incluindo Usuario e Comunidade.
-                        post = extrairPost(rs);
-
-                        // Preenche o campo 'numComentarios' do post
-                        int numComentarios = new ComentarioDAO().contarComentariosPorPost(postId);
-                        post.setNumComentarios(numComentarios);
-                    }
-                }
-            } catch (SQLException e) {
-                System.err.println("Erro ao buscar post por ID: " + e.getMessage());
-                // Trate a exceção de forma mais robusta em um ambiente de produção
-            }
-            return post;
-        
-        }
-         // ... dentro da classe PostDAO.java
-
-            /**
-             * Salva um novo post no banco de dados.
-             *
-             * @param post O objeto Post contendo título, conteúdo, tipo, usuario e comunidade.
-             * @return O ID gerado para o novo post ou -1 em caso de erro.
-             */
-            public int salvarPost(Post post) {
-                String sql = "INSERT INTO Post (comunidade_id, usuario_id, titulo, conteudo, tipo) VALUES (?, ?, ?, ?, ?)";
-                int postId = -1;
-
-                try (Connection conn = getConnection();
-                     PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-
-                    stmt.setInt(1, post.getComunidade().getId());
-                    stmt.setInt(2, post.getUsuario().getId());
-                    stmt.setString(3, post.getTitulo());
-                    stmt.setString(4, post.getConteudo());
-                    stmt.setString(5, post.getTipo());
-
-                    stmt.executeUpdate();
-
-                    // Obtém o ID gerado pelo banco
-                    try (ResultSet rs = stmt.getGeneratedKeys()) {
-                        if (rs.next()) {
-                            postId = rs.getInt(1);
-                        }
-                    }
-                } catch (SQLException e) {
-                    System.err.println("Erro SQL ao salvar novo post: " + e.getMessage());
-                }
-                return postId;
-            }
+        } catch (SQLException e) { System.err.println("Erro ao recalcular votos: " + e.getMessage()); }
     }
 
-    // ...
-		
-	
+    public boolean excluirPost(int postId, int usuarioId) {
+        String sql = "DELETE FROM Post WHERE id = ? AND usuario_id = ?";
+        try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, postId);
+            stmt.setInt(2, usuarioId);
+            return stmt.executeUpdate() > 0; 
+        } catch (SQLException e) { return false; }
+    }
 
+    public boolean deletarPostModerador(int postId) {
+        String sql = "DELETE FROM Post WHERE id = ?";
+        try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, postId);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) { return false; }
+    }
     
+    public boolean atualizarPost(Post post) {
+        String sql = "UPDATE Post SET titulo = ?, conteudo = ? WHERE id = ? AND usuario_id = ?";
+        try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, post.getTitulo());
+            stmt.setString(2, post.getConteudo());
+            stmt.setInt(3, post.getId());
+            stmt.setInt(4, post.getUsuario().getId());
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) { return false; }
+    }
+    
+    public int calcularKarmaTotal(int targetUserId) {
+        String sqlPosts = "SELECT SUM(votos) FROM Post WHERE usuario_id = ?";
+        int karma = 0;
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sqlPosts)) {
+            stmt.setInt(1, targetUserId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    karma = rs.getInt(1); 
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Erro ao calcular Karma: " + e.getMessage());
+        }
+        return karma;
+    }
+}

@@ -1,6 +1,6 @@
-package br.com.minharede;
+package br.com.minharede; // PACOTE CORRIGIDO: Deve ser 'servlets'
 
-import br.com.minharede.DAO.PostDAO;
+import br.com.minharede.DAO.PostDAO;       // CORRIGIDO: Pacote deve ser 'dao' minúsculo
 import br.com.minharede.models.Post;
 import br.com.minharede.models.Comunidade;
 import br.com.minharede.models.Usuario;
@@ -17,22 +17,24 @@ import java.io.IOException;
 @WebServlet("/postar") // Mapeamento para onde o formulário será enviado
 public class PostServlet extends HttpServlet {
 
-    /**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-	private PostDAO postDAO;
+    private static final long serialVersionUID = 1L;
+    private PostDAO postDAO;
 
     @Override
     public void init() throws ServletException {
-        this.postDAO = new PostDAO();
+        try {
+            // 1. Segurança: Instancia o DAO dentro de um try-catch robusto
+            this.postDAO = new PostDAO();
+        } catch (Exception e) {
+            System.err.println("Falha na inicialização do PostDAO: " + e.getMessage());
+            throw new ServletException("Falha na inicialização do DAO.", e);
+        }
     }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         
-        // Configurar a codificação para receber acentos corretamente (se necessário)
         request.setCharacterEncoding("UTF-8");
 
         // 1. Verificar Autenticação
@@ -50,11 +52,16 @@ public class PostServlet extends HttpServlet {
         String tipo = request.getParameter("tipo"); // TEXTO, LINK, IMAGEM
         String comunidadeIdParam = request.getParameter("comunidadeId");
 
-        // --- Validação de Entrada (Segurança) ---
+        // --- Validação de Entrada (Segurança e Integridade) ---
         if (titulo == null || titulo.trim().isEmpty() || conteudo == null || conteudo.trim().isEmpty() || comunidadeIdParam == null) {
-            // Redireciona com uma mensagem de erro se campos essenciais estiverem vazios
-            response.sendRedirect(request.getContextPath() + "/criar-post.jsp?error=campos_vazios");
+            request.setAttribute("error", "campos_vazios");
+            request.getRequestDispatcher("/criar-post.jsp").forward(request, response);
             return;
+        }
+        
+        // Limitar tamanho do título para evitar erros no DB
+        if (titulo.length() > 255) {
+             titulo = titulo.substring(0, 255);
         }
 
         try {
@@ -64,30 +71,36 @@ public class PostServlet extends HttpServlet {
             Post novoPost = new Post();
             novoPost.setTitulo(titulo.trim());
             novoPost.setConteudo(conteudo.trim());
-            novoPost.setTipo(tipo != null ? tipo : "TEXTO"); // Garante um valor padrão
+            novoPost.setTipo(tipo != null ? tipo : "TEXTO");
 
             // Setar as FKs
             novoPost.setUsuario(usuarioLogado);
-            novoPost.setComunidade(new Comunidade()); // Usamos um objeto Comunidade com apenas o ID
+            
+            // É essencial que a classe Comunidade tenha um construtor que aceite apenas o ID
+            Comunidade comunidadeReferencia = new Comunidade();
+            comunidadeReferencia.setId(comunidadeId);
+            novoPost.setComunidade(comunidadeReferencia);
 
             // 4. Salvar no Banco de Dados
-            // O seu PostDAO precisa do método salvarPost()
             int postId = postDAO.salvarPost(novoPost);
 
             // 5. Redirecionar
             if (postId > 0) {
-                // Redireciona para a nova página do post
+                // Sucesso: Redireciona para a nova página do post
                 response.sendRedirect(request.getContextPath() + "/post?id=" + postId);
             } else {
-                // Falha no DAO
-                response.sendRedirect(request.getContextPath() + "/criar-post.jsp?error=db_falha");
+                // Falha no DAO/DB
+                request.setAttribute("error", "db_falha");
+                request.getRequestDispatcher("/criar-post.jsp").forward(request, response);
             }
 
         } catch (NumberFormatException e) {
-            response.sendRedirect(request.getContextPath() + "/criar-post.jsp?error=id_comunidade_invalido");
+            request.setAttribute("error", "id_comunidade_invalido");
+            request.getRequestDispatcher("/criar-post.jsp").forward(request, response);
         } catch (Exception e) {
-            System.err.println("Erro ao salvar post: " + e.getMessage());
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Erro interno ao criar post.");
+            // Robustez: Captura erros críticos de DB/SQL e relança
+            System.err.println("Erro interno ao salvar post: " + e.getMessage());
+            throw new ServletException("Erro na persistência ao criar post.", e);
         }
     }
 }

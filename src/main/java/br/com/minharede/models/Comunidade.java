@@ -1,14 +1,21 @@
 package br.com.minharede.models;
 
+import java.sql.Date;
+
 public class Comunidade {
 
     private int id;
     private String nome;
     private String slug; // O mais importante para as URLs (r/slug)
     private String descricao;
+    private Date DataCriacao;
     // ... outros atributos
 
-    public Comunidade() {}
+    public Comunidade(int comunidadeId) {}
+
+	public Comunidade() {
+		// TODO Auto-generated constructor stub
+	}
 
 	public int getId() {
 		return id;
@@ -40,6 +47,24 @@ public class Comunidade {
 
 	public void setDescricao(String descricao) {
 		this.descricao = descricao;
+	}
+
+	public void setModerador(Usuario usuarioLogado) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public Comunidade getModerador() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public Date getDataCriacao() {
+		return DataCriacao;
+	}
+
+	public void setDataCriacao(Date dataCriacao) {
+		DataCriacao = dataCriacao;
 	}
 
 }

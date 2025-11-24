@@ -1,6 +1,7 @@
 package br.com.minharede.models;
 
-import java.io.Serializable; 
+import java.io.Serializable;
+import java.sql.Date; 
 
 public class Usuario implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -8,7 +9,7 @@ public class Usuario implements Serializable {
     private int id;
     private String nome;
     private String email;
-    
+    private Date dataRegistro; 
     // Construtor usado após o login bem-sucedido
     public Usuario(int id, String nome, String email) {
         this.id = id;
@@ -47,6 +48,13 @@ public class Usuario implements Serializable {
 	public static long getSerialversionuid() {
 		return serialVersionUID;
 	}
+	public Date getDataRegistro() {
+        return dataRegistro;
+    }
+
+    public void setDataRegistro(Date dataRegistro) {
+        this.dataRegistro = dataRegistro;
+    }
+}
 
   
-}

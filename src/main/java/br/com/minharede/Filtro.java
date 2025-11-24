@@ -1,4 +1,4 @@
-package br.com.minharede;
+package br.com.minharede; // Sugestão: Mova para um pacote 'filtros' para organização
 
 import jakarta.servlet.*;
 import jakarta.servlet.annotation.WebFilter; 
@@ -18,11 +18,13 @@ public class Filtro implements Filter {
         HttpServletResponse httpResponse = (HttpServletResponse) response;
         
         String path = httpRequest.getRequestURI().substring(httpRequest.getContextPath().length());
+        
+        // CORREÇÃO DE LINKS: Incluir as rotas de Servlet corretas (ex: /login) e os JSPs
         boolean isPublicResource = path.startsWith("/login.jsp") 
                                 || path.startsWith("/cadastro.jsp")
                                 || path.startsWith("/index.jsp")
-                                || path.startsWith("/login")
-                                || path.startsWith("/cadastro")
+                                || path.startsWith("/login")      // Rota do LoginServlet POST/GET
+                                || path.startsWith("/cadastro")   // Rota do CadastroServlet POST/GET
                                 || path.startsWith("/css/")
                                 || path.startsWith("/js/")
                                 || path.startsWith("/imagens/");
@@ -35,7 +37,7 @@ public class Filtro implements Filter {
             
             chain.doFilter(request, response);
         } else {
-  
+            // Acesso negado: Redireciona para o login
             httpResponse.sendRedirect(httpRequest.getContextPath() + "/login.jsp?acesso=negado");
         }
     }

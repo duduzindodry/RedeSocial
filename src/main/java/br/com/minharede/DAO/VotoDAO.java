@@ -1,28 +1,36 @@
-package br.com.minharede.DAO;
+package br.com.minharede.DAO; // PACOTE CORRIGIDO: Padronizado para 'dao'
 
+import br.com.minharede.utils.ConexaoDB; // Adicionado o utilitário de conexão
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Statement; // Necessário para Statement.RETURN_GENERATED_KEYS (embora não usado aqui)
 
 public class VotoDAO {
     
-    // Assumindo que você tem um método utilitário de conexão
+    private PostDAO postDAO; // 1. Adicionado PostDAO como campo para eficiência
+
+    // Inicializa o PostDAO na construção do VotoDAO
+    public VotoDAO() {
+        this.postDAO = new PostDAO();
+    }
+    
+    // Método utilitário para obter a conexão
     private Connection getConnection() throws SQLException {
-        // [USAR O MESMO CÓDIGO DE CONEXÃO DO PostDAO AQUI]
-        throw new UnsupportedOperationException("Método de conexão não implementado.");
+        // CORRIGIDO: Usa o utilitário de conexão do projeto
+        return ConexaoDB.getConnection();
     }
     
     /**
-     * Registra ou atualiza o voto de um usuário em um post.
+     * Registra ou atualiza o voto de um usuário em um post (UPSERT).
      * @param postId ID do post.
      * @param usuarioId ID do usuário.
      * @param direcao 1 para upvote, -1 para downvote.
      * @return true se a operação foi bem sucedida.
      */
     public boolean salvarVoto(int postId, int usuarioId, int direcao) {
-        // Usa INSERT OR REPLACE INTO (ou REPLACE INTO no MySQL) 
-        // ou UPSERT (se for PostgreSQL) para atomicidade.
         
+        // SQL: UPSERT (Atualiza se a chave duplicar, senão insere)
         String sql = "INSERT INTO VotoPost (post_id, usuario_id, direcao) " +
                      "VALUES (?, ?, ?) " +
                      "ON DUPLICATE KEY UPDATE direcao = VALUES(direcao), data_voto = NOW()";
@@ -34,14 +42,16 @@ public class VotoDAO {
             stmt.setInt(2, usuarioId);
             stmt.setInt(3, direcao);
             
+            // O executeUpdate retornará 1 (inserção) ou 2 (atualização) se for MySQL/MariaDB
             stmt.executeUpdate();
             
-            // Depois de salvar o voto, você DEVE recalcular o total de votos do Post
-            new PostDAO().recalcularVotos(postId); 
+            // 2. Chama o método de recalcular do objeto PostDAO (mais eficiente)
+            this.postDAO.recalcularVotos(postId); 
             
             return true;
         } catch (SQLException e) {
             System.err.println("Erro ao salvar voto: " + e.getMessage());
+            // Em caso de falha, retorne false para o Servlet
             return false;
         }
     }

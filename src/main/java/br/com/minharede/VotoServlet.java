@@ -1,7 +1,7 @@
-package br.com.minharede;
+package br.com.minharede; // Pacote ajustado para 'servlets'
 
-import br.com.minharede.models.Usuario;
 import br.com.minharede.DAO.VotoDAO;
+import br.com.minharede.models.Usuario;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -12,72 +12,74 @@ import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 
-@WebServlet("/votar") // Mapeamento da URL para o servlet
+@WebServlet("/votar")
 public class VotoServlet extends HttpServlet {
 
-    /**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-	private VotoDAO votoDAO;
+    private static final long serialVersionUID = 1L; // Mantido
+    private VotoDAO votoDAO;
 
     @Override
     public void init() throws ServletException {
-        // Inicializa o DAO
-        this.votoDAO = new VotoDAO();
+        try {
+            // Inicializa o DAO
+            this.votoDAO = new VotoDAO();
+        } catch (Exception e) {
+            throw new ServletException("Falha ao inicializar VotoDAO.", e);
+        }
     }
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         
-        // 1. Verificar Autenticação
+        // 1. Verificar Autenticação (Ajustado para AJAX)
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("usuarioLogado") == null) {
-            // Se o usuário não estiver logado, redireciona para a página de login
-            response.sendRedirect(request.getContextPath() + "/login.jsp?error=login_required");
+            // Se não estiver logado, retorna 401 (Unauthorized). O JS captura este status.
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Login necessário para votar.");
             return;
         }
 
         Usuario usuarioLogado = (Usuario) session.getAttribute("usuarioLogado");
 
-        // 2. Coletar Parâmetros
+        // 2. Coletar e Processar Parâmetros
         try {
             int postId = Integer.parseInt(request.getParameter("postId"));
-            int direcao = Integer.parseInt(request.getParameter("direcao")); // Deve ser 1 ou -1
+            int direcao = Integer.parseInt(request.getParameter("direcao")); 
             
             // 3. Validação Básica
             if (direcao != 1 && direcao != -1) {
-                // Se a direção não for válida, logar e ignorar
                 System.err.println("Tentativa de voto com direção inválida: " + direcao);
                 response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Direção do voto inválida.");
                 return;
             }
 
             // 4. Chamar a Camada DAO para salvar/atualizar o voto
-            votoDAO.salvarVoto(postId, usuarioLogado.getId(), direcao);
-
-            // 5. Redirecionar de volta
-            // Redireciona para o cabeçalho "Referer" (a URL de onde o usuário veio: index, feed, ou página do post)
-            String referer = request.getHeader("Referer");
-            if (referer != null && !referer.isEmpty()) {
-                response.sendRedirect(referer);
+            boolean sucesso = votoDAO.salvarVoto(postId, usuarioLogado.getId(), direcao);
+            
+            // 5. Enviar Resposta de Sucesso/Falha
+            if (sucesso) {
+                // Sucesso: Retorna 200 OK e encerra a requisição (essencial para AJAX).
+                response.setStatus(HttpServletResponse.SC_OK);
+                // Opcional: response.getWriter().write(String.valueOf(novoScore)); se o DAO retornar o score
             } else {
-                // Se não houver Referer (acesso direto), volta para o index
-                response.sendRedirect(request.getContextPath() + "/index");
+                // Falha do DAO (ex: erro no banco)
+                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Não foi possível registrar o voto.");
             }
 
         } catch (NumberFormatException e) {
-            // Lidar com parâmetros ausentes ou inválidos
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Parâmetros do post ausentes ou inválidos.");
+            // Parâmetros ausentes ou inválidos
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "ID de Post ou Direção inválida.");
         } catch (Exception e) {
-            // Lidar com erros de banco de dados
             System.err.println("Erro ao processar voto: " + e.getMessage());
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Erro interno ao processar o voto.");
+            // Erro genérico
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Erro interno do servidor.");
         }
+        
+        // Removemos o bloco de redirecionamento (response.sendRedirect)
     }
     
-    // O POST pode simplesmente chamar o doGet para simplificar, já que a ação não modifica o estado da aplicação além do DB.
+    // Mantido o doPost chamando o doGet
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {

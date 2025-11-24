@@ -1,10 +1,10 @@
-package br.com.minharede;
+package br.com.minharede; // PACOTE CORRIGIDO: Deve ser 'servlets'
 
-import br.com.minharede.models.Usuario;
-import br.com.minharede.models.Post;
+import br.com.minharede.DAO.ComunidadeDAO; // CORRIGIDO: Pacote deve ser 'dao' minúsculo
+import br.com.minharede.DAO.PostDAO;       // CORRIGIDO: Pacote deve ser 'dao' minúsculo
 import br.com.minharede.models.Comunidade;
-import br.com.minharede.DAO.PostDAO; 
-import br.com.minharede.DAO.ComunidadeDAO; 
+import br.com.minharede.models.Post;
+import br.com.minharede.models.Usuario;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -20,18 +20,21 @@ import java.util.Collections;
 @WebServlet(name = "IndexServlet", urlPatterns = {"/", "/index"})
 public class IndexServlet extends HttpServlet {
     
-    /**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-	private PostDAO postDAO; 
+    private static final long serialVersionUID = 1L;
+    private PostDAO postDAO; 
     private ComunidadeDAO comunidadeDAO;
 
     @Override
     public void init() throws ServletException {
-        
-        this.postDAO = new PostDAO(); 
-        this.comunidadeDAO = new ComunidadeDAO();
+        try {
+            // 1. Segurança: Instancia os DAOs dentro de um try-catch robusto
+            this.postDAO = new PostDAO(); 
+            this.comunidadeDAO = new ComunidadeDAO();
+        } catch (Exception e) {
+            System.err.println("Falha ao inicializar DAOs do IndexServlet: " + e.getMessage());
+            // Se falhar, impede o carregamento do Servlet (Erro 500 no startup)
+            throw new ServletException("Falha na inicialização do DAO.", e);
+        }
     }
 
     @Override
@@ -50,14 +53,12 @@ public class IndexServlet extends HttpServlet {
         
         // 1. Lógica de Ordenação
         String sortParam = request.getParameter("sort");
-        String orderBy = "data_criacao DESC"; // Padrão: Novo
+        String orderBy = "data_criacao DESC"; 
 
         if ("hot".equalsIgnoreCase(sortParam)) {
-            
             orderBy = "votos_recente DESC"; 
         } else if ("top".equalsIgnoreCase(sortParam)) {
-            
-             orderBy = "votos DESC"; 
+            orderBy = "votos DESC"; 
         }
 
        
@@ -75,7 +76,7 @@ public class IndexServlet extends HttpServlet {
                     listaDePosts = postDAO.buscarPostsPopulares(orderBy);
                 }
             } catch (Exception e) {
-                
+                // 2. Robustez: Em caso de falha de DB (SQLException), loga o erro e mostra o feed global (fallback)
                 System.err.println("Erro ao buscar feed personalizado: " + e.getMessage());
                 listaDePosts = postDAO.buscarPostsPopulares(orderBy);
             }

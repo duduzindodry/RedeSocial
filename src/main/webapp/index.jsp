@@ -1,53 +1,72 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="br.com.minharede.models.Usuario" %>
-<%@ taglib uri="jakarta.tags.core" prefix="c" %>
+<%@ page import="br.com.minharede.models.Comunidade" %>
+<%@ page import="br.com.minharede.models.Post" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.Collections" %>
+
+<%
+    // Mensagem de debug opcional:
+    System.out.println("usuarioLogado JSP: " + session.getAttribute("usuarioLogado"));
+
+    List<Post> posts = (List<Post>) request.getAttribute("posts");
+    if (posts == null) posts = Collections.emptyList();
+
+    List<Comunidade> comunidadesSeguidas = (List<Comunidade>) request.getAttribute("comunidadesSeguidas");
+    if (comunidadesSeguidas == null) comunidadesSeguidas = Collections.emptyList();
+
+    Usuario usuario = (Usuario) session.getAttribute("usuarioLogado");
+%>
+
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MinhaRede - Home</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css">
-  
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-
- 
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MinhaRede - Home</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
-  
+
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
   <div class="container">
     <a class="navbar-brand" href="index.jsp">MinhaRede</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
       <span class="navbar-toggler-icon"></span>
     </button>
+
     <div class="collapse navbar-collapse" id="navbarNav">
+      <form class="d-flex mx-auto" action="pesquisar" method="GET">
+        <input 
+          class="form-control me-2" 
+          type="search" 
+          placeholder="Buscar posts, comunidades..." 
+          aria-label="Search"
+          name="q" 
+          style="width: 350px;"
+          value="<%= request.getParameter("q") != null ? request.getParameter("q") : "" %>"
+        >
+        <button class="btn btn-outline-success" type="submit">
+            <i class="fas fa-search"></i>
+        </button>
+      </form>
+
       <ul class="navbar-nav ms-auto">
-      
-        <%
-          Usuario usuario = (Usuario) session.getAttribute("usuarioLogado");
-          if (usuario != null) {
-            // USUÁRIO LOGADO: MOSTRA PERFIL, AMIGOS E LOGOUT
-        %>
-        <li class="nav-item"><a class="nav-link" href="index.jsp">Home</a></li>
-        <li class="nav-item"><a class="nav-link" href="perfil.jsp">Perfil</a></li>
-        <li class="nav-item"><a class="nav-link" href="amigos.jsp">Amigos</a></li>
-        
-        <li class="nav-item">
-            <a class="nav-link btn btn-sm btn-outline-light ms-2" href="logout">Sair (<%= usuario.getNome() %>)</a>
-        </li>
-        
-        <%
-          } else {
-            // USUÁRIO DESLOGADO: MOSTRA LOGIN E CADASTRO
-        %>
-        <li class="nav-item"><a class="nav-link" href="index.jsp">Home</a></li>
-        <li class="nav-item"><a class="nav-link btn btn-sm btn-outline-light ms-2" href="login.jsp">Login</a></li>
-        <li class="nav-item"><a class="nav-link btn btn-sm btn-light ms-2" href="cadastro.jsp">Cadastro</a></li>
-        <%
-          }
-        %>
+        <% if (usuario != null) { %>
+            <li class="nav-item"><a class="nav-link" href="index.jsp">Home</a></li>
+            <li class="nav-item"><a class="nav-link" href="perfil">Perfil</a></li>
+            <li class="nav-item"><a class="nav-link" href="amigos">Amigos</a></li>
+
+            <li class="nav-item">
+                <a class="nav-link btn btn-sm btn-outline-light ms-2" href="logout">Sair (<%= usuario.getNome() %>)</a>
+            </li>
+        <% } else { %>
+            <li class="nav-item"><a class="nav-link" href="index.jsp">Home</a></li>
+            <li class="nav-item"><a class="nav-link btn btn-sm btn-outline-light ms-2" href="login.jsp">Login</a></li>
+            <li class="nav-item"><a class="nav-link btn btn-sm btn-light ms-2" href="cadastro.jsp">Cadastro</a></li>
+        <% } %>
       </ul>
     </div>
   </div>
@@ -56,36 +75,34 @@
 <div class="container mt-4">
     <div class="row">
 
+        <!-- Barra lateral de comunidades -->
         <div class="col-md-3 d-none d-md-block"> 
             <div class="card mb-3 shadow-sm">
                 <div class="card-header bg-dark text-white fw-bold">
                     <i class="fas fa-list-ul me-2"></i> Comunidades
                 </div>
                 <ul class="list-group list-group-flush">
-                    <c:choose>
-                        <c:when test="${not empty comunidadesSeguidas}">
-                            <c:forEach var="comunidadeSeguida" items="${comunidadesSeguidas}">
+                    <% 
+                        if (!comunidadesSeguidas.isEmpty()) { 
+                            for (Comunidade c : comunidadesSeguidas) {
+                    %>
                                 <li class="list-group-item">
-                                
-                                    <a href="r/${comunidadeSeguida.slug}" class="text-decoration-none">
-                                        r/${comunidadeSeguida.slug}
+                                    <a href="r/<%= c.getSlug() %>" class="text-decoration-none">
+                                        r/<%= c.getSlug() %>
                                     </a>
-                                    <a href="seguirComunidade?comunidadeId=${comunidade.id}" class="btn btn-primary">
-    Seguir Comunidade
-</a>
-
-<a href="seguirComunidade?comunidadeId=${comunidade.id}" class="btn btn-outline-secondary">
-    Deixar de Seguir
-</a>
+                                    <% if (usuario != null) { %>
+                                        <a href="seguirComunidade?comunidadeId=<%= c.getId() %>" class="btn btn-outline-danger btn-sm float-end" title="Deixar de Seguir">
+                                            <i class="fas fa-user-minus"></i>
+                                        </a>
+                                    <% } %>
                                 </li>
-                            </c:forEach>
-                        </c:when>
-                        <c:otherwise>
+                    <%      } 
+                        } else {
+                    %>
                             <li class="list-group-item text-muted small">
                                 Não segue nenhuma comunidade. <a href="descobrir.jsp">Descubra!</a>
                             </li>
-                        </c:otherwise>
-                    </c:choose>
+                    <%  } %>
                 </ul>
             </div>
             
@@ -104,8 +121,8 @@
             </div>
         </div>
 
+        <!-- Feed principal -->
         <div class="col-md-6">
-            
             <div class="p-3 bg-white rounded shadow-sm mb-3 d-flex justify-content-between">
                 <h5 class="mb-0">Feed (<%= usuario != null ? "Personalizado" : "Global" %>)</h5>
                 <div>
@@ -116,111 +133,55 @@
                 </div>
             </div>
             
-            <c:choose>
-                <c:when test="${not empty posts}">
-                   <%-- Trecho dentro do loop <c:forEach var="post" items="${posts}"> no index.jsp --%>
-
-<div class="card shadow-sm mb-3">
-    <div class="post-card d-flex">
-        
-        <div class="post-sidebar">
-            <a href="votar?postId=${post.id}&direcao=1" class="upvote"><i class="fas fa-arrow-up"></i></a>
-            <span class="fw-bold">${post.votos}</span>
-            <a href="votar?postId=${post.id}&direcao=-1" class="downvote"><i class="fas fa-arrow-down"></i></a>
-        </div>
-        
-        <div class="post-content w-100">
-            <div class="post-meta">
-                <span class="badge text-bg-secondary me-2">r/${post.comunidade.slug}</span>
-                Postado por **u/${post.usuario.nome}**
-            </div>
-            
-            <%-- ✨ IMPORTANTE: Link para a página do post individual --%>
-            <h5 class="post-title">
-                <a href="post?id=${post.id}" class="text-decoration-none text-dark">
-                    ${post.titulo}
-                </a>
-            </h5>
-            
-            <%-- Opcional: Se houver conteúdo curto no card, transforme-o em link também --%>
-            <p class="card-text">
-                <a href="post?id=${post.id}" class="text-decoration-none text-body">
-                    ${post.conteudoCurto} <%-- Ou use substring do post.conteudo --%>
-                </a>
-            </p>
-            
-            <div class="post-actions mt-3">
-                <%-- Links de Comentário e Ações --%>
-                <a href="post?id=${post.id}#comments" class="text-secondary text-decoration-none">
-                    <i class="fas fa-comment-alt me-1"></i> ${post.numComentarios} Comentários
-                </a>
-                </div>
-        </div>
-    </div>
-</div>
-                            <div class="post-content">
-                                
+            <% if (!posts.isEmpty()) { 
+                for (Post post : posts) {
+            %>
+                    <div class="card shadow-sm mb-3">
+                        <div class="post-card d-flex">
+                            <div class="post-sidebar">
+                                <a href="votar?postId=<%= post.getId() %>&direcao=1" class="upvote vote-action"><i class="fas fa-arrow-up"></i></a>
+                                <span class="fw-bold score"><%= post.getVotos() %></span>
+                                <a href="votar?postId=<%= post.getId() %>&direcao=-1" class="downvote vote-action"><i class="fas fa-arrow-down"></i></a>
+                            </div>
+                            <div class="post-content w-100">
                                 <div class="post-meta">
-                                    <span class="badge text-bg-secondary me-2">r/${post.comunidade.slug}</span>
-                                    Postado por **u/${post.usuario.nome}** há ${post.tempoAtras}
+                                    <span class="badge text-bg-secondary me-2">r/<%= post.getComunidade().getSlug() %></span>
+                                    Postado por <b>u/<%= post.getUsuario().getNome() %></b>
                                 </div>
-                                
                                 <h5 class="post-title">
-                                    <a href="post?id=${post.id}" class="text-decoration-none">${post.titulo}</a>
+                                    <a href="post?id=<%= post.getId() %>" class="text-decoration-none text-dark">
+                                        <%= post.getTitulo() %>
+                                    </a>
                                 </h5>
-                                
-                                <p class="text-muted small mb-2">${post.conteudoCurto}...</p>
-                                
-                                <div class="post-actions">
-                                    <a href="post?id=${post.id}#comments">
-                                        <i class="fas fa-comment-alt me-1"></i> ${post.numComentarios} Comentários
+                                <p class="card-text">
+                                    <a href="post?id=<%= post.getId() %>" class="text-decoration-none text-body">
+                                        <%= post.getConteudoCurto() != null ? post.getConteudoCurto() : post.getConteudo() %>
+                                    </a>
+                                </p>
+                                <div class="post-actions mt-3">
+                                    <a href="post?id=<%= post.getId() %>#comments" class="text-secondary text-decoration-none">
+                                        <i class="fas fa-comment-alt me-1"></i> <%= post.getNumComentarios() %> Comentários
                                     </a>
                                     <a href="#"><i class="fas fa-share me-1"></i> Compartilhar</a>
                                     <a href="#"><i class="fas fa-save me-1"></i> Salvar</a>
                                 </div>
                             </div>
                         </div>
-                    
-                </c:when>
-                <c:otherwise>
-                    <div class="alert alert-info text-center" role="alert">
-                        Nenhum post para exibir no momento. Que tal criar o primeiro?
                     </div>
-                </c:otherwise>
-            </c:choose>
-            
+            <% 
+                } // Fim do for loop de posts
+            } else { %>
+                <div class="alert alert-info text-center" role="alert">
+                    Nenhum post para exibir no momento. Que tal criar o primeiro?
+                </div>
+            <%  } %>
         </div>
 
-        <div class="col-md-3 d-none d-lg-block">
-            <div class="card sticky-top shadow-sm" style="top: 70px;">
-                <div class="card-header bg-warning text-dark fw-bold">
-                    <i class="fas fa-fire me-2"></i> Tendências Agora
-                </div>
-                <div class="card-body">
-                    <p class="card-text small text-secondary">
-                        Os posts e comunidades que estão bombando neste momento!
-                    </p>
-                    <ul class="list-unstyled small">
-                        <li><a href="post?id=5" class="text-decoration-none">Discussão sobre Java e Jakarta EE...</a></li>
-                        <li><a href="r/ideias" class="text-decoration-none">Comunidade r/ideias em alta.</a></li>
-                        <li><a href="post?id=12" class="text-decoration-none">Melhores livros de programação de 2025.</a></li>
-                    </ul>
-                </div>
-            </div>
-            
-            <c:if test="${usuario == null}">
-                <div class="card mt-3 shadow-sm">
-                    <div class="card-body text-center">
-                        <p class="card-text small mb-3">Junte-se a nós para personalizar seu feed!</p>
-                        <a href="cadastro.jsp" class="btn btn-primary w-100">Crie sua Conta</a>
-                    </div>
-                </div>
-            </c:if>
-        </div>
-        
+        <div class="col-md-3 d-none d-lg-block"></div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/voto.js"></script>
 </body>
 </html>

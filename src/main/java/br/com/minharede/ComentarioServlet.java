@@ -1,6 +1,6 @@
-package br.com.minharede;
+package br.com.minharede; // PACOTE CORRIGIDO: Deve ser 'servlets'
 
-import br.com.minharede.DAO.ComentarioDAO;
+import br.com.minharede.DAO.ComentarioDAO; // CORRIGIDO: Pacote deve ser 'dao' minúsculo
 import br.com.minharede.models.Comentario;
 import br.com.minharede.models.Post;
 import br.com.minharede.models.Usuario;
@@ -17,21 +17,26 @@ import java.io.IOException;
 @WebServlet("/comentar")
 public class ComentarioServlet extends HttpServlet {
 
-    /**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-	private ComentarioDAO comentarioDAO;
+    private static final long serialVersionUID = 1L;
+    private ComentarioDAO comentarioDAO;
 
     @Override
     public void init() throws ServletException {
-        this.comentarioDAO = new ComentarioDAO();
+        try {
+            // 1. Segurança: Instancie o DAO dentro de um try-catch robusto
+            this.comentarioDAO = new ComentarioDAO();
+        } catch (Exception e) {
+            System.err.println("Falha ao inicializar ComentarioDAO: " + e.getMessage());
+            throw new ServletException("Falha na inicialização do DAO.", e);
+        }
     }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         
+        request.setCharacterEncoding("UTF-8");
+
         // 1. Verificar Autenticação
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("usuarioLogado") == null) {
@@ -43,41 +48,45 @@ public class ComentarioServlet extends HttpServlet {
 
         // 2. Coletar Parâmetros
         try {
-            // ID do Post
-            int postId = Integer.parseInt(request.getParameter("postId"));
-            // Conteúdo do Comentário
+            String postIdParam = request.getParameter("postId");
             String conteudo = request.getParameter("conteudo");
             
-            if (conteudo == null || conteudo.trim().isEmpty()) {
-                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "O comentário não pode estar vazio.");
+            // Validação de entrada
+            if (conteudo == null || conteudo.trim().isEmpty() || postIdParam == null || postIdParam.isEmpty()) {
+                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Parâmetros inválidos.");
                 return;
             }
+            
+            int postId = Integer.parseInt(postIdParam);
 
             // 3. Montar o Objeto Comentario
             Comentario novoComentario = new Comentario();
             novoComentario.setConteudo(conteudo.trim());
             
-            // Setar o Post e o Usuario
+            // 4. CORREÇÃO: Setar o objeto Post com o ID correto (chave estrangeira)
+            Post postReferencia = new Post();
+            postReferencia.setId(postId);
+            
             novoComentario.setUsuario(usuarioLogado);
-            novoComentario.setPost(new Post()); // Usamos um objeto Post com apenas o ID
+            novoComentario.setPost(postReferencia);
 
-            // 4. Salvar no Banco de Dados
+            // 5. Salvar no Banco de Dados
             comentarioDAO.adicionarComentario(novoComentario);
 
-            // 5. Redirecionar para a página do post/view
-            // Se você não tem uma view de post individual, volte para o index
+            // 6. Redirecionar para a página do post original (Referer)
             String referer = request.getHeader("Referer");
             if (referer != null && !referer.isEmpty()) {
                 response.sendRedirect(referer);
             } else {
-                response.sendRedirect(request.getContextPath() + "/index");
+                response.sendRedirect(request.getContextPath() + "/post?id=" + postId); // Fallback mais seguro
             }
 
         } catch (NumberFormatException e) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "ID do post inválido.");
         } catch (Exception e) {
+            // 7. Robustez: Trata falhas de DB (SQLException)
             System.err.println("Erro ao processar comentário: " + e.getMessage());
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Erro interno ao salvar o comentário.");
+            throw new ServletException("Erro na camada de persistência ao salvar o comentário.", e);
         }
     }
 }

@@ -3,6 +3,7 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+<link rel="stylesheet" href="css/style.css">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login - MinhaRede</title>
@@ -32,7 +33,10 @@
       <div class="card shadow-lg">
         <div class="card-body">
           <h3 class="card-title text-center mb-4">Login</h3>
-          <form action="login" method="post">
+          <% if (request.getAttribute("erro") != null) { %>
+  <div class="alert alert-danger text-center"><%= request.getAttribute("erro") %></div>
+<% } %>
+          <form action="LoginServlet" method="post">
             <div class="mb-3">
               <label for="usuario" class="form-label">Usuário</label>
               <input type="text" class="form-control" id="usuario" name="usuario" required>

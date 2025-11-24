@@ -1,0 +1,66 @@
+/* ARQUIVO: css/style.css */
+
+/* --- Layout Principal --- */
+body {
+    background-color: #f0f2f5; /* Fundo cinza claro */
+}
+
+/* --- Estilo do Card de Postagem (PostCard) --- */
+.post-card-container {
+    /* Garante que os cards do feed tenham um respiro em relação à sidebar */
+    padding: 0 15px; 
+}
+
+.post-card {
+    border: none; /* Remove a borda padrão do Bootstrap */
+    border-radius: 8px; /* Cantos mais suaves */
+    margin-bottom: 12px;
+    background-color: #ffffff;
+    transition: box-shadow 0.2s ease;
+}
+
+.post-card:hover {
+    /* Adiciona uma leve sombra para feedback visual e profundidade */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08); 
+}
+
+/* --- Sidebar de Votação (Voto Sidebar) --- */
+.post-sidebar {
+    background-color: #fcfcfc; /* Fundo bem claro */
+    border-right: 1px solid #eee;
+    width: 45px; /* Deixa a coluna mais estreita */
+    padding: 10px 0;
+    align-items: center;
+}
+
+.post-sidebar .score {
+    font-weight: 700; /* Mais negrito */
+    font-size: 1.1em;
+}
+
+.vote-action {
+    color: #6c757d; /* Ícones cinzas */
+    font-size: 1.2em;
+    padding: 5px;
+    display: block; /* Garante que toda a área seja clicável */
+}
+
+.vote-action:hover {
+    color: #007bff; /* Cor Primária (Azul) no hover */
+}
+
+/* --- Detalhes do Conteúdo --- */
+.post-meta {
+    font-size: 0.8em;
+    color: #777;
+}
+
+.post-title a {
+    font-weight: 600;
+    color: #333;
+    transition: color 0.2s;
+}
+
+.post-title a:hover {
+    color: #0056b3; /* Um tom de azul mais escuro no hover */
+}
