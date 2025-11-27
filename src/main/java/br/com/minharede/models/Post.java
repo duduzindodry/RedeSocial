@@ -1,58 +1,34 @@
 package br.com.minharede.models;
 
-import java.util.Date;
+import java.io.Serializable;
+import java.time.LocalDateTime; 
 
-public class Post {
+/**
+ * Documentação: Modelo que representa um Post na rede social.
+ * Implementa Serializable para poder ser armazenado em Session ou caches.
+ */
+public class Post implements Serializable {
+    
+    private static final long serialVersionUID = 1L;
+
 
     private int id;
-    private Comunidade comunidade; // Objeto para a chave estrangeira
-    private Usuario usuario;       // Objeto para a chave estrangeira
+    private Comunidade comunidade; 
+    private Usuario usuario;      
     private String titulo;
     private String conteudo;
-    public String getConteudo() {
-		return conteudo;
-	}
-
-	public void setConteudo(String conteudo) {
-		this.conteudo = conteudo;
-	}
-
-	public String getTipo() {
-		return tipo;
-	}
-
-	public void setTipo(String tipo) {
-		this.tipo = tipo;
-	}
-
-	public Date getDataCriacao() {
-		return dataCriacao;
-	}
-
-	public void setDataCriacao(Date dataCriacao) {
-		this.dataCriacao = dataCriacao;
-	}
-
-	public String getTempoAtras() {
-		return tempoAtras;
-	}
-
-	public void setTempoAtras(String tempoAtras) {
-		this.tempoAtras = tempoAtras;
-	}
-
-	private String tipo;           // TEXTO, LINK, IMAGEM
+    private String tipo;           
     private int votos;
-    private Date dataCriacao;
-    
-    // Propriedades úteis para o Feed
-    private int numComentarios; 
-    private String tempoAtras;     // Ex: "5 horas atrás"
+    private LocalDateTime dataCriacao; 
 
-    // Construtor padrão (obrigatório para muitos frameworks e para o DAO)
+   
+    private int numComentarios; 
+    private String tempoAtras;     
+
+   
     public Post() {}
 
-    // --- GETTERS E SETTERS (Mínimo necessário para o seu projeto) ---
+  
 
     public int getId() {
         return id;
@@ -69,11 +45,7 @@ public class Post {
     public void setComunidade(Comunidade comunidade) {
         this.comunidade = comunidade;
     }
-    
-    // ... Incluir todos os outros Getters e Setters
-    // (Ex: getUsuario(), setUsuario(), getTitulo(), setTitulo(), etc.)
-    
-    // Exemplo de Getters e Setters de suporte para o JSP:
+
     public Usuario getUsuario() {
         return usuario;
     }
@@ -81,7 +53,7 @@ public class Post {
     public void setUsuario(Usuario usuario) {
         this.usuario = usuario;
     }
-    
+
     public String getTitulo() {
         return titulo;
     }
@@ -89,13 +61,39 @@ public class Post {
     public void setTitulo(String titulo) {
         this.titulo = titulo;
     }
-    
+
+    public String getConteudo() {
+        return conteudo;
+    }
+
+    public void setConteudo(String conteudo) {
+        this.conteudo = conteudo;
+    }
+
+    public String getTipo() {
+        return tipo;
+    }
+
+    public void setTipo(String tipo) {
+        this.tipo = tipo;
+    }
+
     public int getVotos() {
         return votos;
     }
 
     public void setVotos(int votos) {
         this.votos = votos;
+    }
+
+    
+    public LocalDateTime getDataCriacao() {
+        return dataCriacao;
+    }
+
+    
+    public void setDataCriacao(LocalDateTime dataCriacao) {
+        this.dataCriacao = dataCriacao;
     }
 
     public int getNumComentarios() {
@@ -106,16 +104,22 @@ public class Post {
         this.numComentarios = numComentarios;
     }
 
-    // Você pode adicionar um método de conveniência para pegar um resumo do conteúdo
+    public String getTempoAtras() {
+        return tempoAtras;
+    }
+
+    public void setTempoAtras(String tempoAtras) {
+        this.tempoAtras = tempoAtras;
+    }
+
+   
     public String getConteudoCurto() {
         if (this.conteudo == null || this.conteudo.length() <= 100) {
             return this.conteudo;
         }
         return this.conteudo.substring(0, 100) + "...";
     }
-
-}
-		
+}	
 	
 		
 	

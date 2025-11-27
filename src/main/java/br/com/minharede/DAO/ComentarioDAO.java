@@ -1,138 +1,192 @@
-package br.com.minharede.DAO; // Pacote corrigido para 'dao'
+package br.com.minharede.DAO;
 
 import br.com.minharede.models.Comentario;
-import br.com.minharede.models.Post;
 import br.com.minharede.models.Usuario;
-import br.com.minharede.utils.ConexaoDB; // Assumindo seu utilitário de conexão
+import br.com.minharede.models.Post;
+import br.com.minharede.utils.ConexaoDB; 
 
 import java.sql.*;
-import java.time.ZoneId;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.ArrayList;
 
 public class ComentarioDAO {
+
+   
+	public ComentarioDAO() throws SQLException {
+        
+        try (Connection conn = getConnection()) {
+            
+        } 
+	}
     
-    // Método utilitário para obter a conexão com o BD
+    
+     
     private Connection getConnection() throws SQLException {
-        // Usa o utilitário de conexão do seu projeto
-        return ConexaoDB.getConnection();
+        return ConexaoDB.getConnection(); 
     }
-
-    /**
-     * Extrai um objeto Comentario do ResultSet.
-     */
-    private Comentario extrairComentario(ResultSet rs) throws SQLException {
-        Comentario comentario = new Comentario();
-        comentario.setId(rs.getInt("id"));
-        comentario.setConteudo(rs.getString("conteudo"));
+    
+    
+    // CRUD
+    
+    
+    public List<Comentario> listarComentariosPorPost(int postId) throws SQLException {
         
-        // Converte o TIMESTAMP do SQL para LocalDateTime Java
-        comentario.setDataCriacao(rs.getTimestamp("data_criacao")
-                                      .toInstant()
-                                      .atZone(ZoneId.systemDefault())
-                                      .toLocalDateTime());
-
-        // Cria o objeto Usuario (Autor)
-        Usuario autor = new Usuario();
-        autor.setId(rs.getInt("usuario_id"));
-        autor.setNome(rs.getString("usuario_nome")); 
-        comentario.setUsuario(autor);
-        
-        // Cria o objeto Post
-        Post post = new Post();
-        post.setId(rs.getInt("post_id"));
-        // Adiciona o título do post, se estiver presente no SELECT (como em buscarComentariosPorUsuario)
-        try {
-            post.setTitulo(rs.getString("post_titulo")); 
-        } catch (SQLException ignore) {
-            // Ignora se o alias post_titulo não estiver na query (como em listarComentariosPorPost)
-        }
-        comentario.setPost(post);
-        
-        return comentario;
-    }
-    
-    // ----------------------------------------------------
-    // CRUD BÁSICO
-    // ----------------------------------------------------
-    
-    public int adicionarComentario(Comentario comentario) {
-        // ... (Corpo do método omitido por brevidade - Está correto)
-        return -1;
-    }
-
-    public List<Comentario> listarComentariosPorPost(int postId) {
-        // ... (Corpo do método omitido por brevidade - Está correto)
-        return new ArrayList<>();
-    }
-    
-    public int contarComentariosPorPost(int postId) {
-        // ... (Corpo do método omitido por brevidade - Está correto)
-        return 0;
-    }
-    
-    public boolean excluirComentario(int comentarioId, int usuarioId) {
-        // ... (Corpo do método omitido por brevidade - Está correto)
-        return false;
-    }
-    
-    public boolean atualizarComentario(Comentario comentario) {
-        // ... (Corpo do método omitido por brevidade - Está correto)
-        return false;
-    }
-
-    // ----------------------------------------------------
-    // METÓDO DE BUSCA SIMPLES (Edição/Perfil)
-    // ----------------------------------------------------
-
-    /**
-     * [IMPLEMENTADO] Busca todos os comentários feitos pelo usuário para exibição no perfil.
-     */
-    public List<Comentario> buscarComentariosPorUsuario(int usuarioId) {
+       
+        String sql = "SELECT * FROM Comentario WHERE post_id = ? ORDER BY data_criacao ASC";
         List<Comentario> comentarios = new ArrayList<>();
-        // Note o JOIN para buscar o TÍTULO do post (post_titulo) e o NOME do usuário (usuario_nome)
-        String sql = "SELECT c.*, p.titulo as post_titulo, u.nome as usuario_nome FROM Comentario c " +
-                     "JOIN Post p ON c.post_id = p.id " +
-                     "JOIN Usuario u ON c.usuario_id = u.id " + 
-                     "WHERE c.usuario_id = ? ORDER BY c.data_criacao DESC";
+        
+    
+        try (Connection conn = getConnection(); 
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+          
+            stmt.setInt(1, postId); 
+            
+           
+            try (ResultSet rs = stmt.executeQuery()) {
+                
+                while (rs.next()) {
+                   
+                    Comentario comentario = new Comentario();
+                    comentario.setId(rs.getInt("id"));
+                    comentario.setConteudo(rs.getString("conteudo"));
+                    
+                    Timestamp timestamp = rs.getTimestamp("data_criacao");
+                    if (timestamp != null) {
+                        comentario.setDataCriacao(timestamp.toLocalDateTime());
+                    } else {
+                        comentario.setDataCriacao(null); 
+                    }
+                    
+                    
+         
+        Usuario usuario = new Usuario();
+        usuario.setId(rs.getInt("usuario_id"));
+                   comentario.setUsuario(usuario); 
+                    
+                   
+                  Post post = new Post();
+                    post.setId(rs.getInt("post_id")); 
+                    comentario.setPost(post);
+                    
+                    comentarios.add(comentario);
+                }
+            } 
+            
+        } catch (SQLException e) {
+            // documentação
+            System.err.println("Erro SQL em listarComentariosPorPost: " + e.getMessage());
+            throw e; 
+        }
+        
+        return comentarios;
+    }
+    
+     
+    public boolean adicionarComentario(Comentario comentario) throws SQLException {
+      
+        String sql = "INSERT INTO Comentario (post_id, usuario_id, conteudo) VALUES (?, ?, ?)";
+        
+       
+        int idPost = comentario.getPost().getId();
+        int idUsuario = comentario.getUsuario().getId(); 
+        String conteudo = comentario.getConteudo();
         
         try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
-            stmt.setInt(1, usuarioId); 
-            try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) {
-                    comentarios.add(extrairComentario(rs));
-                }
-            }
+            stmt.setInt(1, idPost);
+            stmt.setInt(2, idUsuario);
+            stmt.setString(3, conteudo);
+            
+            int linhasAfetadas = stmt.executeUpdate();
+            return linhasAfetadas > 0;
+            
         } catch (SQLException e) {
-            System.err.println("Erro ao buscar comentários por usuário: " + e.getMessage());
+            System.err.println("Erro SQL em adicionarComentario: " + e.getMessage());
+            throw e; 
         }
-        return comentarios;
     }
 
-    /**
-     * [IMPLEMENTADO] Busca um comentário pelo ID (para fins de edição), trazendo apenas o conteúdo e o autor.
-     */
-    public Comentario buscarComentarioPorId(int comentarioId) {
-        String sql = "SELECT c.conteudo, c.usuario_id, c.id, u.nome as usuario_nome FROM Comentario c " +
-                     "JOIN Usuario u ON c.usuario_id = u.id " +
-                     "WHERE c.id = ?";
+    
+   
+    public boolean excluirComentario(int comentarioId, int usuarioId) throws SQLException {
+        // A condição 'AND usuario_id = ?' é a verificação de segurança (o autor)
+        String sql = "DELETE FROM Comentario WHERE id = ? AND usuario_id = ?";
+        
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setInt(1, comentarioId);
+            stmt.setInt(2, usuarioId);
+            
+            int linhasAfetadas = stmt.executeUpdate();
+            return linhasAfetadas > 0;
+            
+        } catch (SQLException e) {
+            System.err.println("Erro SQL em excluirComentario: " + e.getMessage());
+            throw e; 
+        }
+    }
+    
+    
+    public Comentario buscarComentarioPorId(int comentarioId) throws SQLException {
+        // Colunas essenciais para validação
+        String sql = "SELECT id, usuario_id, conteudo, post_id FROM Comentario WHERE id = ?";
         Comentario comentario = null;
         
         try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
             stmt.setInt(1, comentarioId);
+            
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    // Extraímos o conteúdo e o ID/Nome do autor
-                    comentario = extrairComentario(rs); 
+                    comentario = new Comentario();
+                    comentario.setId(rs.getInt("id"));
+                    comentario.setConteudo(rs.getString("conteudo"));
+                    
+                    // Mapeamento de objetos relacionados
+                    Usuario usuario = new Usuario();
+                    usuario.setId(rs.getInt("usuario_id"));
+                    comentario.setUsuario(usuario);
+                    
+                    Post post = new Post();
+                    post.setId(rs.getInt("post_id"));
+                    comentario.setPost(post);
                 }
             }
         } catch (SQLException e) {
-            System.err.println("Erro ao buscar comentário por ID: " + e.getMessage());
+            System.err.println("Erro SQL em buscarComentarioPorId: " + e.getMessage());
+            throw e;
         }
         return comentario;
+    }
+
+    
+    
+    public boolean atualizarComentario(Comentario comentario) throws SQLException {
+        
+        String sql = "UPDATE Comentario SET conteudo = ? WHERE id = ? AND usuario_id = ?";
+        
+        // Extrai os dados do objeto
+        String novoConteudo = comentario.getConteudo();
+        int idComentario = comentario.getId();
+        int idUsuario = comentario.getUsuario().getId(); 
+        
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setString(1, novoConteudo);
+            stmt.setInt(2, idComentario);
+            stmt.setInt(3, idUsuario);
+            
+            int linhasAfetadas = stmt.executeUpdate();
+            return linhasAfetadas > 0;
+            
+        } catch (SQLException e) {
+            System.err.println("Erro SQL em atualizarComentario: " + e.getMessage());
+            throw e;
+        }
     }
 }

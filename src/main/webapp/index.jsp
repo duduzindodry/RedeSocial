@@ -1,4 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ page import="br.com.minharede.models.Usuario" %>
 <%@ page import="br.com.minharede.models.Comunidade" %>
 <%@ page import="br.com.minharede.models.Post" %>
@@ -6,16 +7,23 @@
 <%@ page import="java.util.Collections" %>
 
 <%
-    // Mensagem de debug opcional:
+    
     System.out.println("usuarioLogado JSP: " + session.getAttribute("usuarioLogado"));
 
+   
     List<Post> posts = (List<Post>) request.getAttribute("posts");
-    if (posts == null) posts = Collections.emptyList();
+    if (posts == null) {
+        posts = Collections.emptyList();
+        request.setAttribute("posts", posts); 
+    }
 
     List<Comunidade> comunidadesSeguidas = (List<Comunidade>) request.getAttribute("comunidadesSeguidas");
-    if (comunidadesSeguidas == null) comunidadesSeguidas = Collections.emptyList();
-
-    Usuario usuario = (Usuario) session.getAttribute("usuarioLogado");
+    if (comunidadesSeguidas == null) {
+        comunidadesSeguidas = Collections.emptyList();
+        request.setAttribute("comunidadesSeguidas", comunidadesSeguidas); 
+    }
+    
+   
 %>
 
 <!DOCTYPE html>
@@ -46,7 +54,7 @@
           aria-label="Search"
           name="q" 
           style="width: 350px;"
-          value="<%= request.getParameter("q") != null ? request.getParameter("q") : "" %>"
+          value="${param.q}"
         >
         <button class="btn btn-outline-success" type="submit">
             <i class="fas fa-search"></i>
@@ -54,19 +62,23 @@
       </form>
 
       <ul class="navbar-nav ms-auto">
-        <% if (usuario != null) { %>
-            <li class="nav-item"><a class="nav-link" href="index.jsp">Home</a></li>
-            <li class="nav-item"><a class="nav-link" href="perfil">Perfil</a></li>
-            <li class="nav-item"><a class="nav-link" href="amigos">Amigos</a></li>
+        
+        <c:choose>
+            <c:when test="${not empty sessionScope.usuarioLogado}">
+                <li class="nav-item"><a class="nav-link" href="index.jsp">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="perfil">Perfil</a></li>
+                <li class="nav-item"><a class="nav-link" href="amigos">Amigos</a></li>
 
-            <li class="nav-item">
-                <a class="nav-link btn btn-sm btn-outline-light ms-2" href="logout">Sair (<%= usuario.getNome() %>)</a>
-            </li>
-        <% } else { %>
-            <li class="nav-item"><a class="nav-link" href="index.jsp">Home</a></li>
-            <li class="nav-item"><a class="nav-link btn btn-sm btn-outline-light ms-2" href="login.jsp">Login</a></li>
-            <li class="nav-item"><a class="nav-link btn btn-sm btn-light ms-2" href="cadastro.jsp">Cadastro</a></li>
-        <% } %>
+                <li class="nav-item">
+                    <a class="nav-link btn btn-sm btn-outline-light ms-2" href="logout">Sair (<c:out value="${sessionScope.usuarioLogado.nome}"/>)</a>
+                </li>
+            </c:when>
+            <c:otherwise>
+                <li class="nav-item"><a class="nav-link" href="index.jsp">Home</a></li>
+                <li class="nav-item"><a class="nav-link btn btn-sm btn-outline-light ms-2" href="login.jsp">Login</a></li>
+                <li class="nav-item"><a class="nav-link btn btn-sm btn-light ms-2" href="cadastro.jsp">Cadastro</a></li>
+            </c:otherwise>
+        </c:choose>
       </ul>
     </div>
   </div>
@@ -75,34 +87,35 @@
 <div class="container mt-4">
     <div class="row">
 
-        <!-- Barra lateral de comunidades -->
         <div class="col-md-3 d-none d-md-block"> 
             <div class="card mb-3 shadow-sm">
                 <div class="card-header bg-dark text-white fw-bold">
                     <i class="fas fa-list-ul me-2"></i> Comunidades
                 </div>
                 <ul class="list-group list-group-flush">
-                    <% 
-                        if (!comunidadesSeguidas.isEmpty()) { 
-                            for (Comunidade c : comunidadesSeguidas) {
-                    %>
+                    <%-- Iteração de Comunidades --%>
+                    <c:choose>
+                        <c:when test="${not empty comunidadesSeguidas}">
+                            <c:forEach var="c" items="${comunidadesSeguidas}">
                                 <li class="list-group-item">
-                                    <a href="r/<%= c.getSlug() %>" class="text-decoration-none">
-                                        r/<%= c.getSlug() %>
+                                    <a href="r/${c.slug}" class="text-decoration-none">
+                                        r/${c.slug}
                                     </a>
-                                    <% if (usuario != null) { %>
-                                        <a href="seguirComunidade?comunidadeId=<%= c.getId() %>" class="btn btn-outline-danger btn-sm float-end" title="Deixar de Seguir">
+                                    <%-- Botão de "Deixar de Seguir" (apenas se logado) --%>
+                                    <c:if test="${not empty sessionScope.usuarioLogado}">
+                                        <a href="seguirComunidade?comunidadeId=${c.id}" class="btn btn-outline-danger btn-sm float-end" title="Deixar de Seguir">
                                             <i class="fas fa-user-minus"></i>
                                         </a>
-                                    <% } %>
+                                    </c:if>
                                 </li>
-                    <%      } 
-                        } else {
-                    %>
+                            </c:forEach>
+                        </c:when>
+                        <c:otherwise>
                             <li class="list-group-item text-muted small">
                                 Não segue nenhuma comunidade. <a href="descobrir.jsp">Descubra!</a>
                             </li>
-                    <%  } %>
+                        </c:otherwise>
+                    </c:choose>
                 </ul>
             </div>
             
@@ -121,10 +134,9 @@
             </div>
         </div>
 
-        <!-- Feed principal -->
         <div class="col-md-6">
             <div class="p-3 bg-white rounded shadow-sm mb-3 d-flex justify-content-between">
-                <h5 class="mb-0">Feed (<%= usuario != null ? "Personalizado" : "Global" %>)</h5>
+                <h5 class="mb-0">Feed (<c:out value="${not empty sessionScope.usuarioLogado ? 'Personalizado' : 'Global'}"/>)</h5>
                 <div>
                     <span class="text-muted me-2 small">Ordenar:</span>
                     <a href="?sort=hot" class="btn btn-sm btn-danger active">Quente</a>
@@ -133,48 +145,50 @@
                 </div>
             </div>
             
-            <% if (!posts.isEmpty()) { 
-                for (Post post : posts) {
-            %>
-                    <div class="card shadow-sm mb-3">
-                        <div class="post-card d-flex">
-                            <div class="post-sidebar">
-                                <a href="votar?postId=<%= post.getId() %>&direcao=1" class="upvote vote-action"><i class="fas fa-arrow-up"></i></a>
-                                <span class="fw-bold score"><%= post.getVotos() %></span>
-                                <a href="votar?postId=<%= post.getId() %>&direcao=-1" class="downvote vote-action"><i class="fas fa-arrow-down"></i></a>
-                            </div>
-                            <div class="post-content w-100">
-                                <div class="post-meta">
-                                    <span class="badge text-bg-secondary me-2">r/<%= post.getComunidade().getSlug() %></span>
-                                    Postado por <b>u/<%= post.getUsuario().getNome() %></b>
+            <%-- Iteração de Posts --%>
+            <c:choose>
+                <c:when test="${not empty posts}"> 
+                    <c:forEach var="post" items="${posts}">
+                        <div class="card shadow-sm mb-3">
+                            <div class="post-card d-flex">
+                                <div class="post-sidebar">
+                                    <a href="votar?postId=${post.id}&direcao=1" class="upvote vote-action"><i class="fas fa-arrow-up"></i></a>
+                                    <span class="fw-bold score">${post.votos}</span>
+                                    <a href="votar?postId=${post.id}&direcao=-1" class="downvote vote-action"><i class="fas fa-arrow-down"></i></a>
                                 </div>
-                                <h5 class="post-title">
-                                    <a href="post?id=<%= post.getId() %>" class="text-decoration-none text-dark">
-                                        <%= post.getTitulo() %>
-                                    </a>
-                                </h5>
-                                <p class="card-text">
-                                    <a href="post?id=<%= post.getId() %>" class="text-decoration-none text-body">
-                                        <%= post.getConteudoCurto() != null ? post.getConteudoCurto() : post.getConteudo() %>
-                                    </a>
-                                </p>
-                                <div class="post-actions mt-3">
-                                    <a href="post?id=<%= post.getId() %>#comments" class="text-secondary text-decoration-none">
-                                        <i class="fas fa-comment-alt me-1"></i> <%= post.getNumComentarios() %> Comentários
-                                    </a>
-                                    <a href="#"><i class="fas fa-share me-1"></i> Compartilhar</a>
-                                    <a href="#"><i class="fas fa-save me-1"></i> Salvar</a>
+                                <div class="post-content w-100">
+                                    <div class="post-meta">
+                                        <span class="badge text-bg-secondary me-2">r/${post.comunidade.slug}</span>
+                                        Postado por <b>u/${post.usuario.nome}</b>
+                                    </div>
+                                    <h5 class="post-title">
+                                        <a href="post?id=${post.id}" class="text-decoration-none text-dark">
+                                            ${post.titulo}
+                                        </a>
+                                    </h5>
+                                    <p class="card-text">
+                                        <a href="post?id=${post.id}" class="text-decoration-none text-body">
+                                            ${post.conteudoCurto != null ? post.conteudoCurto : post.conteudo}
+                                        </a>
+                                    </p>
+                                    <div class="post-actions mt-3">
+                                        <a href="post?id=${post.id}#comments" class="text-secondary text-decoration-none">
+                                            <i class="fas fa-comment-alt me-1"></i> ${post.numComentarios} Comentários
+                                        </a>
+                                        <a href="#"><i class="fas fa-share me-1"></i> Compartilhar</a>
+                                        <a href="#"><i class="fas fa-save me-1"></i> Salvar</a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                    </c:forEach>
+                </c:when>
+                <c:otherwise>
+                    <div class="alert alert-info text-center" role="alert">
+                        Nenhum post para exibir no momento. Que tal criar o primeiro?
                     </div>
-            <% 
-                } // Fim do for loop de posts
-            } else { %>
-                <div class="alert alert-info text-center" role="alert">
-                    Nenhum post para exibir no momento. Que tal criar o primeiro?
-                </div>
-            <%  } %>
+                </c:otherwise>
+            </c:choose>
         </div>
 
         <div class="col-md-3 d-none d-lg-block"></div>

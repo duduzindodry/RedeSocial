@@ -1,70 +1,91 @@
 package br.com.minharede.models;
 
-import java.sql.Date;
+import java.io.Serializable;
+import java.time.LocalDateTime; // ✅ Usamos o tipo moderno (Java 8+)
 
-public class Comunidade {
+/**
+ * Documentação: Modelo que representa uma Comunidade (Sub-rede) na aplicação.
+ */
+public class Comunidade implements Serializable {
+    
+    private static final long serialVersionUID = 1L;
 
+    // --- CAMPOS DE PERSISTÊNCIA ---
     private int id;
     private String nome;
-    private String slug; // O mais importante para as URLs (r/slug)
+    private String slug; 
     private String descricao;
-    private Date DataCriacao;
-    // ... outros atributos
+    private LocalDateTime dataCriacao; // ✅ CORRIGIDO: Usando LocalDateTime
+    private Usuario moderador;         // ✅ NOVO CAMPO: Para a chave estrangeira do Moderador
 
-    public Comunidade(int comunidadeId) {}
+    // --- CONSTRUTORES ---
 
-	public Comunidade() {
-		// TODO Auto-generated constructor stub
-	}
+    /**
+     * Documentação: Construtor padrão (obrigatório para frameworks e DAO).
+     */
+    public Comunidade() {}
 
-	public int getId() {
-		return id;
-	}
+    /**
+     * Documentação: Construtor útil para inicializar apenas pela chave primária (ID).
+     * @param comunidadeId O ID da comunidade.
+     */
+    public Comunidade(int comunidadeId) {
+        this.id = comunidadeId; // Inicializa o ID corretamente
+    }
 
-	public void setId(int id) {
-		this.id = id;
-	}
+    // ----------------------------------------------------------------------
+    // GETTERS E SETTERS
+    // ----------------------------------------------------------------------
 
-	public String getNome() {
-		return nome;
-	}
+    public int getId() {
+        return id;
+    }
 
-	public void setNome(String nome) {
-		this.nome = nome;
-	}
+    public void setId(int id) {
+        this.id = id;
+    }
 
-	public String getSlug() {
-		return slug;
-	}
+    public String getNome() {
+        return nome;
+    }
 
-	public void setSlug(String slug) {
-		this.slug = slug;
-	}
+    public void setNome(String nome) {
+        this.nome = nome;
+    }
 
-	public String getDescricao() {
-		return descricao;
-	}
+    public String getSlug() {
+        return slug;
+    }
 
-	public void setDescricao(String descricao) {
-		this.descricao = descricao;
-	}
+    public void setSlug(String slug) {
+        this.slug = slug;
+    }
 
-	public void setModerador(Usuario usuarioLogado) {
-		// TODO Auto-generated method stub
-		
-	}
+    public String getDescricao() {
+        return descricao;
+    }
 
-	public Comunidade getModerador() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public void setDescricao(String descricao) {
+        this.descricao = descricao;
+    }
+    
+  
+    public LocalDateTime getDataCriacao() {
+        return dataCriacao;
+    }
 
-	public Date getDataCriacao() {
-		return DataCriacao;
-	}
+    public void setDataCriacao(LocalDateTime dataCriacao) {
+        this.dataCriacao = dataCriacao;
+    }
 
-	public void setDataCriacao(Date dataCriacao) {
-		DataCriacao = dataCriacao;
-	}
+    
+    public Usuario getModerador() {
+        return moderador;
+    }
 
+    public void setModerador(Usuario moderador) {
+        this.moderador = moderador;
+    }
+
+   
 }

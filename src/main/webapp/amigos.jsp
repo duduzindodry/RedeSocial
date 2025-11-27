@@ -50,7 +50,7 @@
 </nav>
 
 <%
-    // Variáveis enviadas pelo AmigosServlet. O import de List e Collections agora está no topo.
+   
     List<Usuario> listaAmigos = (List<Usuario>) request.getAttribute("listaAmigos");
     List<Usuario> solicitacoesRecebidas = (List<Usuario>) request.getAttribute("solicitacoesRecebidas");
 

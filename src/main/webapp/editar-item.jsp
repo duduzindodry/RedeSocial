@@ -10,7 +10,7 @@
     <div class="row justify-content-center">
         <div class="col-lg-8">
             
-            <%-- Variáveis passadas pelo EditServlet: 'tipo' e 'item' --%>
+           
             <c:set var="item" value="${requestScope.item}"/>
             <c:set var="tipo" value="${requestScope.tipo}"/>
             
@@ -26,13 +26,12 @@
                 
                 <form action="editar" method="POST">
                     
-                    <%-- Campos obrigatórios para o Servlet POST --%>
+                   
                     <input type="hidden" name="id" value="${item.id}">
                     <input type="hidden" name="tipo" value="${tipo}">
 
-                    <%-- ---------------------------------------- --%>
-                    <%-- FORMULÁRIO DE EDIÇÃO DE POST --%>
-                    <%-- ---------------------------------------- --%>
+                    
+                
                     <c:if test="${tipo == 'post'}">
                         
                         <div class="mb-3">
@@ -54,13 +53,11 @@
                                       required>${item.conteudo}</textarea>
                         </div>
                         
-                        <%-- O campo Comunidade geralmente não é editável em redes sociais como Reddit, mas você pode adicioná-lo se quiser. Vamos omitir por simplicidade. --%>
+                        
                         
                     </c:if>
 
-                    <%-- ---------------------------------------- --%>
-                    <%-- FORMULÁRIO DE EDIÇÃO DE COMENTÁRIO --%>
-                    <%-- ---------------------------------------- --%>
+                   
                     <c:if test="${tipo == 'comentario'}">
                         
                         <div class="mb-3">
@@ -72,14 +69,13 @@
                                       required>${item.conteudo}</textarea>
                         </div>
                         
-                        <%-- Adicionar o ID do Post original para redirecionamento após a edição --%>
+                   
                         <input type="hidden" name="postId" value="${item.postId}">
                         
                     </c:if>
 
                     <button type="submit" class="btn btn-success me-2">Salvar Alterações</button>
                     
-                    <%-- Botão Cancelar que redireciona para a página principal ou post --%>
                     <a href="${header.referer}" class="btn btn-secondary">Cancelar</a>
                     
                 </form>

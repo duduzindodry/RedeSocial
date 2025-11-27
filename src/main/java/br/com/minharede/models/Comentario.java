@@ -5,15 +5,15 @@ import java.time.LocalDateTime;
 public class Comentario {
     
     private int id;
-    private Post post; // O post ao qual pertence
-    private Usuario usuario; // O autor do comentário
+    private Post post; 
+    private Usuario usuario; 
     private String conteudo;
     private LocalDateTime dataCriacao;
     
-    // Construtor vazio e Construtor completo (opcional)
+    
     public Comentario() {}
 
-    // Getters e Setters
+    
     public int getId() {
         return id;
     }

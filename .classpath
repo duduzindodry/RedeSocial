@@ -24,7 +24,7 @@
 			<attribute name="org.eclipse.jst.component.dependency" value="/WEB-INF/lib"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/luise/Downloads/jbcrypt-0.4.jar">
+	<classpathentry kind="lib" path="C:/Users/luise/Downloads/jakarta.servlet.jsp.jstl-2.0.0.jar">
 		<attributes>
 			<attribute name="module" value="true"/>
 		</attributes>

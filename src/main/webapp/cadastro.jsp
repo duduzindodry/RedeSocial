@@ -18,7 +18,6 @@
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav ms-auto">
-
         <li class="nav-item"><a class="nav-link" href="login.jsp">Login</a></li>
         <li class="nav-item"><a class="nav-link" href="cadastro.jsp">Cadastro</a></li>
       </ul>
@@ -33,30 +32,30 @@
         <div class="card-body">
           <h3 class="card-title text-center mb-4">Cadastre-se</h3>
           
-          <!-- NOVO FORMULÁRIO CORRIGIDO: ACTION e METHOD definidos -->
-          <form action="cadastro" method="post">
+          <!-- BLOCO QUE EXIBE ERROS DO SERVLET -->
+          <% if (request.getAttribute("erro") != null) { %>
+            <div class="alert alert-danger text-center mb-3">
+              <%= request.getAttribute("erro") %>
+            </div>
+          <% } %>
           
+          <form action="cadastro" method="post">
             <div class="mb-3">
               <label for="nome" class="form-label">Nome Completo</label>
               <input type="text" class="form-control" id="nome" name="nome" required>
             </div>
-            
             <div class="mb-3">
               <label for="usuario" class="form-label">Nome de Usuário</label>
-              <!-- ESSENCIAL: name="usuario" para o Servlet capturar -->
               <input type="text" class="form-control" id="usuario" name="usuario" required>
             </div>
-            
             <div class="mb-3">
               <label for="email" class="form-label">Email</label>
               <input type="email" class="form-control" id="email" name="email" required>
             </div>
-            
             <div class="mb-3">
               <label for="senha" class="form-label">Senha</label>
               <input type="password" class="form-control" id="senha" name="senha" required>
             </div>
-            
             <div class="d-grid">
               <button type="submit" class="btn btn-success">Cadastrar</button>
             </div>
@@ -65,7 +64,6 @@
           <p class="text-center mt-3">
             Já tem conta? <a href="login.jsp">Faça Login</a>
           </p>
-          
         </div>
       </div>
     </div>

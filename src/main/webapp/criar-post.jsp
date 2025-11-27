@@ -3,20 +3,19 @@
 <%@ page import="br.com.minharede.models.Comunidade" %>
 
 <%
-    // Recupera o usuário logado para garantir que a sessão esteja ativa
+  
     Usuario usuario = (Usuario) session.getAttribute("usuarioLogado");
     
-    // REDIRECIONAMENTO DE SEGURANÇA: Se não estiver logado, não pode criar posts
+    
     if (usuario == null) {
         response.sendRedirect("login.jsp?error=login_required");
         return;
     }
 
-    // A comunidade alvo pode ser passada via request se o usuário clicar no botão "Criar Post"
-    // dentro de uma comunidade específica (ex: /r/programacao)
+   
     Comunidade comunidadeAlvo = (Comunidade) request.getAttribute("comunidadeAlvo");
     
-    // Verifica se há alguma mensagem de erro (enviada pelo PostServlet em caso de falha)
+   
     String erro = request.getParameter("error"); 
 %>
 <!DOCTYPE html>
@@ -77,7 +76,7 @@
                                 %>
                                     <select class="form-select" id="comunidade" name="comunidadeId" required>
                                         <option value="">Selecione uma Comunidade</option>
-                                        <%-- AQUI ENTRARIA O LOOP PARA CARREGAR AS OPÇÕES DO BANCO DE DADOS --%>
+                                        
                                         <option value="1">r/Geral</option>
                                         <option value="2">r/Programacao</option>
                                     </select>

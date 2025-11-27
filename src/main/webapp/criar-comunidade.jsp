@@ -2,13 +2,13 @@
 <%@ page import="br.com.minharede.models.Usuario" %>
 
 <%
-    // Recupera o usuário logado (já garantido pelo ComunidadeServlet, mas é uma boa prática)
+  
     Usuario usuario = (Usuario) session.getAttribute("usuarioLogado");
     
-    // Pega a mensagem de erro que pode ter sido enviada pelo Servlet (se a validação falhar)
+    
     String erro = (String) request.getAttribute("error"); 
 
-    // REDIRECIONAMENTO DE SEGURANÇA: Embora o Servlet deva fazer isso, garantimos aqui.
+
     if (usuario == null) {
         response.sendRedirect("login.jsp?error=login_required");
         return;

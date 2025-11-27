@@ -6,18 +6,15 @@
 
 
 <%
-    // --- Variáveis de Contexto (Scriptlets) ---
-    // O objeto 'post' deve ser obtido do request (enviado pelo PostViewServlet)
+    
     Post post = (Post) request.getAttribute("post");
-    // O objeto 'usuarioLogado' é obtido da sessão
+  
     Usuario usuarioLogado = (Usuario) session.getAttribute("usuarioLogado");
 
-    // Lógica para checar se o usuário atual é o autor do post
+    
     boolean isAuthor = (usuarioLogado != null && post != null && post.getUsuario().getId() == usuarioLogado.getId());
     
-    // NOTA: Para exibir os botões de moderação de terceiros,
-    // a verificação 'isModerador' deve ser feita no topo do arquivo!
-    // Ex: boolean isModerador = new ComunidadeDAO().verificarAutoridadeModerador(post.getComunidade().getId(), usuarioLogado.getId());
+ 
 %>
 
 <nav></nav>
@@ -26,11 +23,11 @@
     <div class="row justify-content-center">
         <div class="col-lg-8">
             
-            <!-- CARD DA POSTAGEM PRINCIPAL -->
+           
             <div class="card shadow-sm mb-4">
                 <div class="post-card d-flex">
                     <div class="post-sidebar">
-                        <%-- Botão de Votação (AJAX) - Adicionado a classe 'vote-action' --%>
+                       
                         <a href="votar?postId=<%= post.getId() %>&direcao=1" class="upvote vote-action"><i class="fas fa-arrow-up"></i></a>
                         <span class="fw-bold score"><%= post.getVotos() %></span>
                         <a href="votar?postId=<%= post.getId() %>&direcao=-1" class="downvote vote-action"><i class="fas fa-arrow-down"></i></a>
@@ -48,7 +45,7 @@
                         <div class="post-actions mt-3">
                             <a href="#comments"><i class="fas fa-comment-alt me-1"></i> <%= post.getNumComentarios() %> Comentários</a>
                             
-                            <%-- Botões de Edição e Exclusão do POST (Autor) --%>
+                           
                             <% if (isAuthor) { %>
                                 <a href="editar?tipo=post&id=<%= post.getId() %>" class="btn btn-sm btn-outline-info ms-3">
                                     <i class="fas fa-edit"></i> Editar
@@ -59,7 +56,7 @@
                                     <i class="fas fa-trash"></i> Excluir
                                 </a>
                             <% } %>
-                            <%-- Adicionar botão de Moderação aqui se a variável isModerador for verdadeira --%>
+                        
                         </div>
                     </div>
                 </div>
@@ -67,7 +64,7 @@
 
             <h5 class="mt-4 mb-3" id="comments">Adicionar Comentário</h5>
             
-            <%-- Formulário de Comentário --%>
+           
             <c:if test="<%= usuarioLogado != null %>">
                 <div class="card mb-4">
                     <div class="card-body">
@@ -89,7 +86,6 @@
 
             <h5 class="mt-4 mb-3">${comentarios.size()} Comentários</h5>
             
-            <%-- Listagem de Comentários --%>
             <c:forEach var="comentario" items="${comentarios}">
                 <div class="card mb-3 comment-card">
                     <div class="card-body p-3">
@@ -98,7 +94,7 @@
                         </small>
                         <p class="mb-0">${comentario.conteudo}</p>
                         
-                        <%-- Botões de Edição e Exclusão do COMENTÁRIO (JSTL/EL) --%>
+                        
                         <c:if test="${usuarioLogado != null && comentario.usuario.id == usuarioLogado.id}">
                             <div class="mt-2 text-end">
                                 
@@ -127,7 +123,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<%-- REMOVIDO: Duplicação de script do Bootstrap --%>
+
 <script src="js/voto.js"></script> 
 </body>
 </html>

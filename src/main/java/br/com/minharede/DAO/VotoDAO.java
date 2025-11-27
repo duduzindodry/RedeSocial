@@ -1,58 +1,96 @@
-package br.com.minharede.DAO; // PACOTE CORRIGIDO: Padronizado para 'dao'
+package br.com.minharede.DAO;
 
-import br.com.minharede.utils.ConexaoDB; // Adicionado o utilitário de conexão
+import br.com.minharede.utils.ConexaoDB; 
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement; // Necessário para Statement.RETURN_GENERATED_KEYS (embora não usado aqui)
 
 public class VotoDAO {
-    
-    private PostDAO postDAO; // 1. Adicionado PostDAO como campo para eficiência
-
-    // Inicializa o PostDAO na construção do VotoDAO
-    public VotoDAO() {
-        this.postDAO = new PostDAO();
-    }
-    
-    // Método utilitário para obter a conexão
-    private Connection getConnection() throws SQLException {
-        // CORRIGIDO: Usa o utilitário de conexão do projeto
-        return ConexaoDB.getConnection();
-    }
-    
-    /**
-     * Registra ou atualiza o voto de um usuário em um post (UPSERT).
-     * @param postId ID do post.
-     * @param usuarioId ID do usuário.
-     * @param direcao 1 para upvote, -1 para downvote.
-     * @return true se a operação foi bem sucedida.
-     */
-    public boolean salvarVoto(int postId, int usuarioId, int direcao) {
+	public VotoDAO() throws SQLException { 
         
-        // SQL: UPSERT (Atualiza se a chave duplicar, senão insere)
-        String sql = "INSERT INTO VotoPost (post_id, usuario_id, direcao) " +
-                     "VALUES (?, ?, ?) " +
-                     "ON DUPLICATE KEY UPDATE direcao = VALUES(direcao), data_voto = NOW()";
-
-        try (Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setInt(1, postId);
-            stmt.setInt(2, usuarioId);
-            stmt.setInt(3, direcao);
-            
-            // O executeUpdate retornará 1 (inserção) ou 2 (atualização) se for MySQL/MariaDB
-            stmt.executeUpdate();
-            
-            // 2. Chama o método de recalcular do objeto PostDAO (mais eficiente)
-            this.postDAO.recalcularVotos(postId); 
-            
-            return true;
-        } catch (SQLException e) {
-            System.err.println("Erro ao salvar voto: " + e.getMessage());
-            // Em caso de falha, retorne false para o Servlet
-            return false;
-        }
+        
     }
+    private Connection getConnection() throws SQLException {
+        
+        return ConexaoDB.getConnection(); 
+    }
+    
+    
+    public boolean salvarVoto(int postId, int usuarioId, int novaDirecao) throws SQLException {
+        
+        String selectSql = "SELECT direcao FROM VotoPost WHERE post_id = ? AND usuario_id = ?";
+        
+        try (Connection conn = getConnection()) {
+            
+            conn.setAutoCommit(false); 
+            int direcaoAtual = 0;
+
+          
+            try (PreparedStatement selectStmt = conn.prepareStatement(selectSql)) {
+                selectStmt.setInt(1, postId);
+                selectStmt.setInt(2, usuarioId);
+                try (ResultSet rs = selectStmt.executeQuery()) {
+                    if (rs.next()) {
+                        direcaoAtual = rs.getInt("direcao");
+                    }
+                }
+            }
+            
+            String operacaoSql;
+          
+            boolean removerVoto = (direcaoAtual == novaDirecao); 
+
+            if (direcaoAtual == 0) {
+              
+                operacaoSql = "INSERT INTO VotoPost (post_id, usuario_id, direcao) VALUES (?, ?, ?)";
+                
+            } else if (removerVoto) {
+                
+                operacaoSql = "DELETE FROM VotoPost WHERE post_id = ? AND usuario_id = ?";
+                
+            } else {
+              
+                operacaoSql = "UPDATE VotoPost SET direcao = ? WHERE post_id = ? AND usuario_id = ?";
+            }
+            
+        
+            try (PreparedStatement operacaoStmt = conn.prepareStatement(operacaoSql)) {
+                
+                if (direcaoAtual == 0) { 
+                    operacaoStmt.setInt(1, postId);
+                    operacaoStmt.setInt(2, usuarioId);
+                    operacaoStmt.setInt(3, novaDirecao);
+                } else if (removerVoto) { // DELETE
+                    operacaoStmt.setInt(1, postId);
+                    operacaoStmt.setInt(2, usuarioId);
+                } else { // UPDATE
+                    operacaoStmt.setInt(1, novaDirecao);
+                    operacaoStmt.setInt(2, postId);
+                    operacaoStmt.setInt(3, usuarioId);
+                }
+                operacaoStmt.executeUpdate();
+            }
+
+           
+
+            conn.commit(); 
+
+        } catch (SQLException e) {
+            System.err.println("Erro SQL ao registrar voto: " + e.getMessage());
+            
+            
+            try {
+                if (getConnection() != null) getConnection().rollback();
+            } catch (SQLException rollbackEx) {
+                System.err.println("Erro durante o rollback: " + rollbackEx.getMessage());
+            }
+            
+            throw e; 
+        }
+		return false;
+    }
+    
+   
 }

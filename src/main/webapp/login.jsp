@@ -1,13 +1,13 @@
+
 <%@ page language="java" contentType="text/html; charset=UTF-8"
     pageEncoding="UTF-8"%>
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-<link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login - MinhaRede</title>
-
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
@@ -20,7 +20,6 @@
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav ms-auto">
-        
         <li class="nav-item"><a class="nav-link" href="cadastro.jsp">Cadastro</a></li>
       </ul>
     </div>
@@ -33,13 +32,26 @@
       <div class="card shadow-lg">
         <div class="card-body">
           <h3 class="card-title text-center mb-4">Login</h3>
+
+    
           <% if (request.getAttribute("erro") != null) { %>
-  <div class="alert alert-danger text-center"><%= request.getAttribute("erro") %></div>
-<% } %>
-          <form action="LoginServlet" method="post">
+            <div class="alert alert-danger text-center">
+              <%= request.getAttribute("erro") %>
+            </div>
+          <% } %>
+          
+          <%-- Bloco para exibir mensagem de sucesso do cadastro --%>
+          <% if ("sucesso".equals(request.getParameter("cadastro"))) { %>
+            <div class="alert alert-success text-center">
+              Cadastro realizado com sucesso! Faça login para continuar.
+            </div>
+          <% } %>
+
+          <form action="login" method="post"> 
+   
             <div class="mb-3">
-              <label for="usuario" class="form-label">Usuário</label>
-              <input type="text" class="form-control" id="usuario" name="usuario" required>
+              <label for="usuario" class="form-label">Usuário ou Email</label> 
+              <input type="text" class="form-control" id="usuario" name="login" required> 
             </div>
             <div class="mb-3">
               <label for="senha" class="form-label">Senha</label>
@@ -48,7 +60,7 @@
             <div class="d-grid">
               <button type="submit" class="btn btn-primary">Entrar</button>
             </div>
-          </form>
+       </form>
           <p class="text-center mt-3">
             Ainda não tem conta? <a href="cadastro.jsp">Cadastre-se</a>
           </p>

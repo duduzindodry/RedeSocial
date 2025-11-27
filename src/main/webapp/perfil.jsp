@@ -6,24 +6,24 @@
 <%@ page import="java.util.Collections" %>
 
 <%
-    // --- 1. OBTENDO VARIÁVEIS DO SERVLET ---
+    
     Usuario usuarioPerfil = (Usuario) request.getAttribute("usuarioPerfil");
     List<Post> postsCriados = (List<Post>) request.getAttribute("postsCriados");
     List<Comentario> comentariosFeitos = (List<Comentario>) request.getAttribute("comentariosFeitos");
     Integer karmaTotal = (Integer) request.getAttribute("karmaTotal");
     
-    // Fallbacks para evitar NullPointerException e garantir que os dados sejam exibidos
+  
     if (postsCriados == null) postsCriados = java.util.Collections.emptyList();
     if (comentariosFeitos == null) comentariosFeitos = java.util.Collections.emptyList();
     if (karmaTotal == null) karmaTotal = 0;
     
-    // Redirecionamento de segurança caso o Servlet não encontre o usuário
+    
     if (usuarioPerfil == null) {
         response.sendRedirect("index.jsp"); 
         return;
     }
     
-    // Variável para o botão Adicionar Amigo (usuário logado na sessão)
+ 
     Usuario usuarioLogado = (Usuario) session.getAttribute("usuarioLogado");
 %>
 <!DOCTYPE html>

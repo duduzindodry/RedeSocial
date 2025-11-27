@@ -22,7 +22,7 @@
         
         <div class="col-md-8">
             
-            <%-- Botão Criar Post --%>
+            
             <a href="criar-post.jsp?comunidadeId=<%= comunidade.getId() %>" class="btn btn-success mb-3">
                 <i class="fas fa-plus-circle"></i> Criar Post em r/<%= comunidade.getNome() %>
             </a>
@@ -56,7 +56,7 @@
                     <p class="small text-muted">Membro desde: <%= comunidade.getDataCriacao() %></p>
                     <hr>
                     
-                    <%-- Lógica do Botão Seguir/Seguindo --%>
+                   
                     <% if (usuarioLogado != null) { %>
                         <a href="seguirComunidade?comunidadeId=<%= comunidade.getId() %>" 
                            class="btn <%= isSeguindo ? "btn-outline-danger" : "btn-primary" %> w-100">
